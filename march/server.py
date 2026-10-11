@@ -399,6 +399,10 @@ def build_app(cfg: Settings | None = None) -> App:
         db = connect(cfg, cfg.mode)
         persistence = "atlas"
     else:
+        # Finalists must build on the event Atlas sandbox: refuse to run off-Atlas unless a
+        # developer explicitly opts in for local debugging (never for the demo).
+        if os.getenv("MARCH_ALLOW_INMEMORY") != "1":
+            raise SystemExit("MONGODB_URI (event Atlas sandbox) is required. Refusing to start.")
         import mongomock
 
         db = mongomock.MongoClient(tz_aware=True)[cfg.db_name(cfg.mode)]
