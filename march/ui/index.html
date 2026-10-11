@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MARCH desk</title>
+<style>
+  :root { --bg:#f6f5f2; --card:#fff; --ink:#1c1c1c; --muted:#6b6b6b; --line:#e3e1dc; --accent:#2f5d50; --warn:#9a4b00; --bad:#a02c2c; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#151514; --card:#1f1f1d; --ink:#ecebe7; --muted:#9a9890; --line:#34332f; --accent:#7fbfa8; --warn:#e3a05a; --bad:#e07070; } }
+  * { box-sizing:border-box; }
+  body { margin:0; font:15px/1.45 system-ui, -apple-system, sans-serif; background:var(--bg); color:var(--ink); }
+  main { max-width:960px; margin:0 auto; padding:20px 16px 60px; }
+  header { display:flex; flex-wrap:wrap; gap:12px; align-items:baseline; justify-content:space-between; }
+  h1 { font-size:22px; margin:0; letter-spacing:.02em; }
+  .badges span { font-size:12px; padding:3px 8px; border:1px solid var(--line); border-radius:99px; margin-left:6px; color:var(--muted); }
+  .badges .bad { color:var(--bad); border-color:var(--bad); }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px; margin-top:16px; }
+  .label { font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-bottom:8px; }
+  .who { display:flex; gap:8px; flex-wrap:wrap; }
+  button { font:inherit; padding:7px 14px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--ink); cursor:pointer; }
+  button.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+  button.on { outline:2px solid var(--accent); }
+  button:disabled { opacity:.5; cursor:wait; }
+  textarea, input { width:100%; font:inherit; padding:9px; border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--ink); }
+  textarea { min-height:64px; resize:vertical; }
+  .row { display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
+  .note { color:var(--muted); font-size:13px; }
+  .warn { color:var(--warn); }
+  pre { white-space:pre-wrap; word-break:break-word; background:var(--bg); padding:10px; border-radius:8px; font-size:13px; margin:8px 0 0; }
+  .slots li { margin:3px 0; }
+  .state { font-weight:600; }
+  details summary { cursor:pointer; color:var(--muted); font-size:13px; }
+  .run { border-top:1px solid var(--line); padding:10px 0; }
+  .run:first-child { border-top:0; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>MARCH · shared desk</h1>
+    <div class="badges" id="badges"></div>
+  </header>
+
+  <section class="card">
+    <div class="label">Who is at the desk</div>
+    <div class="who" id="who"></div>
+    <p class="note warn" id="identity-note">Manual fixture identity (demo only). Voice identification is not active on this page yet.</p>
+  </section>
+
+  <section class="card" id="voice-card">
+    <div class="label">Voice · NovemberAI capture + ASR (local) · MARCH speaker ID (local ECAPA)</div>
+    <div class="row">
+      <button id="mic">Turn on microphone</button>
+      <button class="primary" id="talk" disabled>Hold to talk (or hold Space)</button>
+      <button id="vcancel" disabled>Cancel</button>
+    </div>
+    <p id="vmsg" class="note">Microphone off.</p>
+    <p id="vwho"></p>
+    <details><summary>Enroll a consenting volunteer</summary>
+      <p class="note">Stores an encrypted voice embedding in MongoDB (no raw audio). Used only to open this fictional workspace. Revocable anytime.</p>
+      <div class="row">
+        <select id="enroll-who"><option value="emp_asha">Asha (fictional)</option><option value="emp_ben">Ben (fictional)</option><option value="emp_casey">Casey (fictional)</option></select>
+        <label class="note"><input type="checkbox" id="consent" style="width:auto"> I consent to voice enrollment</label>
+        <button id="enroll">Start enrollment</button>
+        <button id="enroll-cancel">Stop</button>
+      </div>
+      <p id="enroll-msg" class="note"></p>
+      <p id="enrolled" class="note"></p>
+      <button id="revoke" hidden>Revoke my voice profile</button>
+    </details>
+    <details><summary>Developer diagnostics</summary><pre id="vdiag"></pre></details>
+  </section>
+
+  <section class="card" id="ask" hidden>
+    <div class="label">Typed input → NovemberAI intent compiler</div>
+    <textarea id="text" placeholder="e.g. find a 30 minute slot with Ben tomorrow · email Priya about the launch · look up the latest MongoDB Atlas vector search docs"></textarea>
+    <div class="row">
+      <button class="primary" id="go">Send</button>
+      <span class="note" id="status"></span>
+    </div>
+  </section>
+
+  <section class="card" id="result-card" hidden>
+    <div class="label">Result</div>
+    <div id="result"></div>
+  </section>
+
+  <section class="card" id="actions-card" hidden>
+    <div class="label">Pending actions (exact-payload approval, fixture outbox only)</div>
+    <div id="actions"></div>
+  </section>
+
+  <section class="card" id="harness-card" hidden>
+    <div class="label">Harness · bounded self-improvement (this employee only)</div>
+    <p id="h-active"></p>
+    <div class="row"><button id="h-improve">Run one improvement cycle</button><button id="h-refresh">Refresh</button></div>
+    <pre id="h-log" class="note"></pre>
+    <div id="h-eval"></div>
+    <details><summary>Versions</summary><div id="h-versions"></div></details>
+  </section>
+
+  <section class="card" id="runs-card" hidden>
+    <div class="label">Recent runs in this employee's private workspace</div>
+    <div id="runs"></div>
+  </section>
+</main>
+<script>
+const EMPLOYEES = [["emp_asha","Asha"],["emp_ben","Ben"],["emp_casey","Casey"]];
+let current = null;
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+async function api(path, body) {
+  const res = await fetch(path, body === undefined ? {} : {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)});
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || res.status);
+  return data;
+}
+
+async function health() {
+  const h = await api("/health");
+  const persisted = h.persistence === "atlas";
+  $("badges").innerHTML =
+    `<span class="${persisted && h.atlasReady ? "" : "bad"}">${persisted ? (h.atlasReady ? "Atlas ready" : "Atlas unreachable") : "NOT persisted (in-memory fallback)"}</span>` +
+    `<span>${esc(h.compiler)}</span><span>mode: ${esc(h.mode)}</span>`;
+}
+
+function renderWho() {
+  $("who").innerHTML = EMPLOYEES.map(([id, name]) =>
+    `<button data-id="${id}" class="${current && current.employee.id === id ? "on" : ""}">${name} (fictional)</button>`).join("");
+  $("who").querySelectorAll("button").forEach(b => b.onclick = () => select(b.dataset.id));
+}
+
+async function select(id) {
+  render(await api("/api/demo/select-profile", {fixtureEmployeeId: id}));
+  $("result-card").hidden = true;
+}
+
+function renderResult(run) {
+  if (!run) return;
+  $("result-card").hidden = false;
+  const r = run.result || {};
+  const n = run.november || {};
+  let html = "";
+  if (run.state === "failed") html = `<p class="warn">November could not compile that reliably (${esc((run.failureCodes||[]).join(", "))}). Nothing was carried out.</p>`;
+  else if (r.capability === "calendar.find_slots") {
+    html = `<p><b>${esc(r.dayLabel)}</b> (${esc(r.date)}, ${esc(r.timeZone)}) · ${r.durationMinutes} min</p>` +
+      (r.slots.length ? `<ul class="slots">${r.slots.map(s => `<li>${s.start}–${s.end}</li>`).join("")}</ul>` : `<p>No free slot in the allowed window.</p>`) +
+      (r.appliedPreferences.length ? `<p class="note">Applied your preferences: ${esc(r.appliedPreferences.join(", "))}</p>` : "") +
+      `<p class="note">${esc(r.note)}</p>`;
+  } else if (r.capability === "mail.prepare" && r.status === "prepared") {
+    html = `<p>Prepared ${r.actionType === "mail.draft" ? "a <b>draft only</b> (you said not to send)" : "an email awaiting your approval"} below.</p>`;
+  } else if (r.capability === "browser.research") {
+    html = `<p><b>Web research</b> · ${esc(r.status)}</p><p>${esc(r.message)}</p>` +
+      ((run.browserProgress || []).length ? `<details ${run.state === "browsing" ? "open" : ""}><summary>Browser steps</summary><ul>${run.browserProgress.map(x => `<li>${esc(x)}</li>`).join("")}</ul></details>` : "") +
+      ((r.sources || []).length ? `<p class="note">Sources: ${r.sources.map(u => `<a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(u)}</a>`).join(" · ")}</p>` : "") +
+      (run.browserRefusedInteraction ? `<p class="warn">Stopped before interacting with “${esc(run.browserRefusedInteraction.label)}”: office browser is read-only.</p>` : "") +
+      `<p class="note">${esc(r.label || "Read-only public web research in the shared desk browser (Aside, local). No employee logins.")}</p>` +
+      (run.state === "browsing" ? `<button id="bcancel">Cancel research</button>` : "");
+    setTimeout(() => { const b = $("bcancel"); if (b) b.onclick = () => api(`/api/runs/${run._id}/cancel`, {}); }, 0);
+    if (run.state === "browsing") setTimeout(async () => { try { const fresh = await api(`/api/runs/${run._id}`); if (current) renderResult(fresh); } catch (e) {} }, 1500);
+  } else if (r.capability === "memory.list") {
+    html = `<p>${esc(r.message)}</p>` + (r.items.length ? `<ul>${r.items.map(i => `<li>${esc(i.text)} <span class="note">(${esc(i.kind)})</span></li>`).join("")}</ul>` : "");
+  } else html = `<p>${esc(r.message || "Done.")}</p>`;
+  if (r.relatedNotes && r.relatedNotes.length) html += `<p class="note">Recalled from your memory (${esc(run.recallMethod || "")}): ${r.relatedNotes.map(n => esc(n.text)).join(" · ")}</p>`;
+  if (!run.november || !run.november.intent) { $("result").innerHTML = html + `<p class="note">Handled by MARCH memory after NovemberAI transcript checks.</p>`; return; }
+  html += `<details><summary>NovemberAI compiled intent (${esc(n.compiler)}, ${Math.round(n.latencyMs||0)} ms)</summary><pre>${esc(JSON.stringify({command:n.normalizedCommand, intent:n.intent, decision:n.decision}, null, 2))}</pre></details>`;
+  $("result").innerHTML = html;
+}
+
+function renderActions(list) {
+  $("actions-card").hidden = !list.length;
+  $("actions").innerHTML = list.map(a => {
+    const p = a.normalizedPayload;
+    const open = a.state === "pending" || a.state === "draft";
+    return `<div class="run" data-id="${a._id}">
+      <div><span class="state">${esc(a.actionType)}</span> · ${esc(a.state)}${a.state === "simulated_sent" ? " <span class='warn'>(SIMULATED — no email delivered)</span>" : ""}</div>
+      <pre>From: ${esc(p.from)}\nTo: ${esc(p.to.join(", "))}\nSubject: ${esc(p.subject)}\n\n${esc(p.body)}</pre>
+      ${a.prohibitedActions.length ? `<p class="note">Preserved limits from November: do not ${esc(a.prohibitedActions.join(", "))}</p>` : ""}
+      <p class="note">payload hash ${esc(a.payloadHash.slice(0,16))}…</p>
+      ${open ? `<div class="row">
+        ${a.dispatchable ? `<button class="primary" data-act="approve" data-hash="${a.payloadHash}">Approve this exact email</button>` : ""}
+        <button data-act="edit">Edit body</button>
+        <button data-act="reject">Discard</button></div>` : ""}
+    </div>`;
+  }).join("");
+  $("actions").querySelectorAll("button[data-act]").forEach(b => b.onclick = async () => {
+    const id = b.closest("[data-id]").dataset.id;
+    try {
+      if (b.dataset.act === "approve") render(await api(`/api/actions/${id}/approve`, {displayedPayloadHash: b.dataset.hash}));
+      else if (b.dataset.act === "reject") render(await api(`/api/actions/${id}/reject`, {}));
+      else {
+        const body = prompt("Edit the body (any change needs a fresh approval):");
+        if (body !== null) render(await api(`/api/actions/${id}/edit`, {body}));
+      }
+    } catch (e) { alert("Rejected: " + e.message); }
+  });
+}
+
+function renderRuns(list) {
+  $("runs-card").hidden = !list.length;
+  $("runs").innerHTML = list.map(r => `<div class="run"><div>${esc(r.transcript)}</div>
+    <div class="note">${esc(r.capability || r.state)} · ${esc(r.inputSource)} · identity: ${esc(r.identitySource)} · harness ${esc(r.harnessVersionId)} · ${esc(new Date(r.createdAt).toLocaleTimeString())}</div></div>`).join("");
+}
+
+async function renderHarness() {
+  if (!current) return;
+  try {
+    const h = await api("/api/harness");
+    $("harness-card").hidden = false;
+    $("h-active").innerHTML = `Active: <b>${esc(h.active.label)}</b> <span class="note">pinExplicitPreferences=${h.active.config.retrieval.pinExplicitPreferences}, semanticTopK=${h.active.config.retrieval.semanticTopK}, schedulingPreferencePass=${h.active.config.workflow.schedulingPreferencePass}</span>`;
+    $("h-log").textContent = (h.cycle.log || []).join("\n");
+    $("h-improve").disabled = h.cycle.state === "running";
+    const e = h.lastEvaluation;
+    $("h-eval").innerHTML = !e ? "" : `<p><b>Decision: ${esc(e.gateDecision)}</b> · ${esc(e.suiteVersion)} · ${e.repetitions} paired repeats</p>` +
+      (e.proposal ? `<pre>patch ${esc(JSON.stringify(e.proposal.patch))}\nhypothesis: ${esc(e.proposal.hypothesis)}</pre>` : "") +
+      (e.aggregate ? `<p class="note">dev+val pass rate: baseline ${JSON.stringify(e.baselineRates)} → candidate ${JSON.stringify(e.candidateRates)} · gain ${e.aggregate.gain.toFixed(3)} vs noise band ${e.aggregate.noiseBand.toFixed(3)} · fixed: ${esc(e.aggregate.fixedCases.join(", ") || "none")} · regressed: ${esc(e.aggregate.regressedCases.join(", ") || "none")}</p>` : "") +
+      (e.heldOutTest && e.heldOutTest.baseline ? `<p class="note">held-out test (never shown to optimizer): baseline ${e.heldOutTest.baseline.passed}/${e.heldOutTest.baseline.total} → candidate ${e.heldOutTest.candidate.passed}/${e.heldOutTest.candidate.total}</p>` : "") +
+      (e.failureCodes && e.failureCodes.length ? `<p class="warn">Gate reasons: ${esc(e.failureCodes.join("; "))}</p>` : "") +
+      `<details><summary>Per-case failures</summary><pre>baseline: ${esc(JSON.stringify(e.baselineFailures))}\ncandidate: ${esc(JSON.stringify(e.candidateFailures))}</pre></details>`;
+    $("h-versions").innerHTML = h.versions.map(v => `<div class="run">${esc(v.label)} · ${esc(v.status)} ${v.patch ? "· " + esc(JSON.stringify(v.patch)) : ""} ${v.rejectionReasons ? `<span class="warn">${esc(v.rejectionReasons.join("; "))}</span>` : ""}
+      ${v.status !== "active" && v.status !== "rejected" && v.status !== "candidate" ? `<button data-rb="${v.id}">Roll back to this</button>` : ""}</div>`).join("");
+    $("h-versions").querySelectorAll("[data-rb]").forEach(b => b.onclick = async () => { await api("/api/harness/rollback", {targetVersionId: b.dataset.rb}).catch(()=>{}); renderHarness(); });
+    if (h.cycle.state === "running") setTimeout(renderHarness, 2000);
+  } catch (e) {}
+}
+$("h-improve") && ($("h-improve").onclick = async () => { await api("/api/harness/improve", {}).catch(e => alert(e.message)); renderHarness(); });
+$("h-refresh") && ($("h-refresh").onclick = renderHarness);
+
+function render(view) {
+  const prevShown = current && current.shownRun;
+  current = view;
+  current.shownRun = prevShown;
+  renderWho();
+  $("ask").hidden = false;
+  $("identity-note").textContent = view.employee.identitySource === "voice_match"
+    ? `${view.employee.displayName}'s workspace, opened by local voice identification (demo routing only; not authentication).`
+    : `${view.employee.displayName}'s workspace via MANUAL fixture identity (demo/debug only, not voice recognition).`;
+  renderActions(view.actions);
+  renderRuns(view.runs);
+  renderHarness();
+  if (view.run) renderResult(view.run);
+}
+
+$("go").onclick = async () => {
+  const text = $("text").value.trim();
+  if (!text) return;
+  $("go").disabled = true;
+  $("status").textContent = "Compiling with NovemberAI on this laptop… (can take ~20 s)";
+  try { render(await api("/api/runs", {text})); $("status").textContent = ""; }
+  catch (e) { $("status").textContent = "Error: " + e.message; }
+  finally { $("go").disabled = false; }
+};
+$("text").addEventListener("keydown", e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) $("go").click(); });
+
+// ---- Voice: November's worklet + VoiceLoop protocol, push-to-talk only ----
+let ctx = null, stream = null, node = null, captureId = "", seq = 0, queue = [], draining = false, holding = false, wakeCount = 0, adopted = "";
+const NAMES = Object.fromEntries(EMPLOYEES);
+async function vapi(path, body) { return api(path, body || {}); }
+async function drain() {
+  if (draining) return; draining = true;
+  try {
+    while (queue.length) {
+      const item = queue.shift();
+      if (item.type === "finish") { await vapi("/api/voice/finish", {capture_id: captureId, wake_count: wakeCount}); continue; }
+      const res = await fetch("/api/voice/frame", {method:"POST", headers:{"Content-Type":"application/octet-stream","X-Capture-Id":captureId,"X-Audio-Sequence":String(seq++)}, body:item});
+      if (!res.ok) { await micOff((await res.json()).error); break; }
+    }
+  } finally { draining = false; }
+}
+async function micOn() {
+  try {
+    ctx = new AudioContext({sampleRate:16000}); await ctx.resume();
+    stream = await navigator.mediaDevices.getUserMedia({audio:{channelCount:1, echoCancellation:true, noiseSuppression:true, autoGainControl:true}});
+    const st = await vapi("/api/voice/start"); captureId = st.capture_id; seq = 0; wakeCount = st.wake_count;
+    await ctx.audioWorklet.addModule("/audio-worklet.js");
+    node = new AudioWorkletNode(ctx, "november-capture");
+    ctx.createMediaStreamSource(stream).connect(node); node.connect(ctx.destination);
+    node.port.onmessage = (e) => { if (captureId) { queue.push(e.data); drain(); } };
+    $("mic").textContent = "Turn off microphone"; $("talk").disabled = false; $("vcancel").disabled = false;
+  } catch (e) { await micOff(e.message); }
+}
+async function micOff(msg) {
+  captureId = ""; queue = [];
+  if (stream) stream.getTracks().forEach(t => t.stop());
+  if (ctx) await ctx.close().catch(()=>{});
+  stream = ctx = node = null;
+  await vapi("/api/voice/stop").catch(()=>{});
+  $("mic").textContent = "Turn on microphone"; $("talk").disabled = true; $("vcancel").disabled = true;
+  if (msg) $("vmsg").textContent = msg;
+}
+async function holdStart() {
+  if (!captureId || holding) return; holding = true;
+  const st = await vapi("/api/voice/hold/start").catch(e => { holding = false; $("vmsg").textContent = e.message; });
+  if (st) wakeCount = st.wake_count;
+}
+function holdEnd() { if (!holding) return; holding = false; node && node.port.postMessage({type:"finish"}); }
+$("mic").onclick = () => stream ? micOff("Microphone off. Audio discarded.") : micOn();
+$("talk").onmousedown = holdStart; $("talk").onmouseup = holdEnd; $("talk").onmouseleave = holdEnd;
+$("vcancel").onclick = () => vapi("/api/voice/cancel");
+window.addEventListener("keydown", e => { if (e.code === "Space" && !e.repeat && !/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) { e.preventDefault(); holdStart(); } });
+window.addEventListener("keyup", e => { if (e.code === "Space" && !/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) { e.preventDefault(); holdEnd(); } });
+$("enroll").onclick = async () => {
+  try { await vapi("/api/enroll/start", {fixtureEmployeeId: $("enroll-who").value, consent: $("consent").checked}); }
+  catch (e) { $("enroll-msg").textContent = "Consent is required to enroll."; }
+};
+$("enroll-cancel").onclick = () => vapi("/api/enroll/cancel");
+$("revoke").onclick = async () => { await vapi("/api/voice/revoke"); alert("Your voice profile was revoked."); };
+
+async function pollVoice() {
+  try {
+    const st = await api("/api/voice/status");
+    if (st.available === false) { $("vmsg").textContent = "Voice unavailable: " + (st.error || "not configured") + ". Typed input still works."; $("mic").disabled = true; return; }
+    if (st.state !== "off") $("vmsg").textContent = st.message;
+    const d = st.desk, last = d.last || {};
+    $("enrolled").textContent = "Enrolled: " + (d.enrolled.length ? d.enrolled.map(id => NAMES[id]).join(", ") : "nobody yet") +
+      ` · thresholds ${d.thresholds.calibrated ? "calibrated" : "PROVISIONAL (not yet calibrated)"}`;
+    $("enroll-msg").textContent = d.enrollment ? `${NAMES[d.enrollment.employeeId]}: ${d.enrollment.message}` : "";
+    $("vdiag").textContent = JSON.stringify(last.diagnostics || {}, null, 2);
+    if (last.status === "matched") {
+      $("vwho").innerHTML = `<b>Voice recognized: ${esc(NAMES[last.employeeId])}</b> <span class="note">(${esc(last.runState || "")})</span>`;
+      if (last.adoptToken && last.adoptToken !== adopted) {
+        adopted = last.adoptToken;
+        const view = await api("/api/voice/adopt", {token: last.adoptToken});
+        $("result-card").hidden = true; render(view);
+      }
+      if (last.runState === "completed" && current && current.employee.id === last.employeeId && last.runId && last.runId !== current.shownRun) {
+        const view = await api("/api/me"); const run = view.runs.find(r => r._id === last.runId);
+        render(view); current.shownRun = last.runId; renderResult(run);
+      }
+    } else if (["unknown","ambiguous","insufficient_audio","no_profiles"].includes(last.status)) {
+      $("vwho").innerHTML = `<span class="warn">${esc(last.message)}</span>`;
+      if (current) { current = null; ["ask","result-card","actions-card","runs-card"].forEach(id => $(id).hidden = true); renderWho(); }
+    }
+    $("revoke").hidden = !(current && d.enrolled.includes(current.employee.id));
+  } catch (e) {}
+  finally { setTimeout(pollVoice, 700); }
+}
+
+renderWho();
+health();
+pollVoice();
+api("/api/me").then(render).catch(() => {});
+</script>
+</body>
+</html>

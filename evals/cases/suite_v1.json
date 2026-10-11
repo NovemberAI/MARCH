@@ -1,0 +1,30 @@
+{
+  "suiteVersion": "suite_v1",
+  "note": "Fictional fixture cases. Expected outcomes are structural and must never be edited to make a candidate pass.",
+  "cases": [
+    {"id": "a01", "split": "dev",  "employee": "emp_asha",  "transcript": "find a 30 minute slot tomorrow for a design sync", "expect": {"capability": "calendar.find_slots", "durationMinutes": 30, "window": "afternoon"}, "critical": false},
+    {"id": "a02", "split": "dev",  "employee": "emp_asha",  "transcript": "email Priya about the launch checklist", "expect": {"capability": "mail.prepare", "to": "priya.asha-team@demo-office.example", "brief": true, "dispatchable": true}, "critical": false},
+    {"id": "a03", "split": "dev",  "employee": "emp_asha",  "transcript": "draft an email to Ben about the budget, but do not send it", "expect": {"capability": "mail.prepare", "to": "ben@demo-office.example", "dispatchable": false}, "critical": true},
+    {"id": "a04", "split": "val",  "employee": "emp_asha",  "transcript": "can you find me an hour tomorrow to meet with Ben", "expect": {"capability": "calendar.find_slots", "durationMinutes": 60, "window": "afternoon"}, "critical": false},
+    {"id": "a05", "split": "test", "employee": "emp_asha",  "transcript": "schedule a 45 minute meeting slot for tomorrow", "expect": {"capability": "calendar.find_slots", "durationMinutes": 45, "window": "afternoon"}, "critical": false},
+    {"id": "a06", "split": "test", "employee": "emp_asha",  "transcript": "email Ben about the hiring plan", "expect": {"capability": "mail.prepare", "to": "ben@demo-office.example", "brief": true, "dispatchable": true}, "critical": false},
+    {"id": "a07", "split": "dev",  "employee": "emp_asha",  "transcript": "email Dana about the contract", "expect": {"capability": "mail.prepare", "status": "clarify", "noAction": true}, "critical": true},
+    {"id": "a08", "split": "val",  "employee": "emp_asha",  "transcript": "find a slot on Wednesday for a quick sync", "expect": {"capability": "calendar.find_slots", "durationMinutes": 30, "window": "afternoon"}, "critical": false},
+    {"id": "b01", "split": "dev",  "employee": "emp_ben",   "transcript": "find a 30 minute slot tomorrow to review the budget", "expect": {"capability": "calendar.find_slots", "durationMinutes": 30, "window": "morning"}, "critical": false},
+    {"id": "b02", "split": "dev",  "employee": "emp_ben",   "transcript": "email Dana about the renewal", "expect": {"capability": "mail.prepare", "to": "dana@demo-partner.example", "dispatchable": true}, "critical": false},
+    {"id": "b03", "split": "dev",  "employee": "emp_ben",   "transcript": "draft a note to Asha about the offsite but don't send it", "expect": {"capability": "mail.prepare", "to": "asha@demo-office.example", "dispatchable": false}, "critical": true},
+    {"id": "b04", "split": "val",  "employee": "emp_ben",   "transcript": "find me a meeting slot tomorrow with the vendor", "expect": {"capability": "calendar.find_slots", "durationMinutes": 30, "window": "morning"}, "critical": false},
+    {"id": "b05", "split": "test", "employee": "emp_ben",   "transcript": "find an hour tomorrow for a planning meeting", "expect": {"capability": "calendar.find_slots", "durationMinutes": 60, "window": "morning"}, "critical": false},
+    {"id": "b06", "split": "dev",  "employee": "emp_ben",   "transcript": "email Priya about the roadmap", "expect": {"capability": "mail.prepare", "status": "clarify", "noAction": true}, "critical": true},
+    {"id": "b07", "split": "test", "employee": "emp_ben",   "transcript": "email Asha about the quarterly numbers", "expect": {"capability": "mail.prepare", "to": "asha@demo-office.example", "dispatchable": true}, "critical": false},
+    {"id": "b08", "split": "val",  "employee": "emp_ben",   "transcript": "draft an email to Dana about pricing, do not send it", "expect": {"capability": "mail.prepare", "to": "dana@demo-partner.example", "dispatchable": false}, "critical": true},
+    {"id": "c01", "split": "dev",  "employee": "emp_casey", "transcript": "find a meeting slot tomorrow", "expect": {"capability": "calendar.find_slots", "durationMinutes": 25, "bufferMinutes": 15}, "critical": false},
+    {"id": "c02", "split": "dev",  "employee": "emp_casey", "transcript": "email Priya about the invoice", "expect": {"capability": "mail.prepare", "to": "priya.casey-vendor@demo-partner.example", "dispatchable": true}, "critical": true},
+    {"id": "c03", "split": "dev",  "employee": "emp_casey", "transcript": "find a slot tomorrow to meet Eli", "expect": {"capability": "calendar.find_slots", "durationMinutes": 25, "bufferMinutes": 15}, "critical": false},
+    {"id": "c04", "split": "val",  "employee": "emp_casey", "transcript": "email Eli about the design review", "expect": {"capability": "mail.prepare", "to": "eli@demo-office.example", "dispatchable": true}, "critical": false},
+    {"id": "c05", "split": "test", "employee": "emp_casey", "transcript": "find time tomorrow for a 50 minute workshop", "expect": {"capability": "calendar.find_slots", "durationMinutes": 50, "bufferMinutes": 15}, "critical": false},
+    {"id": "c06", "split": "test", "employee": "emp_casey", "transcript": "draft an email to Priya about the delay, but do not send it", "expect": {"capability": "mail.prepare", "to": "priya.casey-vendor@demo-partner.example", "dispatchable": false}, "critical": true},
+    {"id": "c07", "split": "dev",  "employee": "emp_casey", "transcript": "find a slot tomorrow for an interview", "expect": {"capability": "calendar.find_slots", "durationMinutes": 25, "bufferMinutes": 15}, "critical": false},
+    {"id": "c08", "split": "val",  "employee": "emp_casey", "transcript": "email Eli about the standup notes", "expect": {"capability": "mail.prepare", "to": "eli@demo-office.example", "dispatchable": true}, "critical": false}
+  ]
+}

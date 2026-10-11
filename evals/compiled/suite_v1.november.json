@@ -1,0 +1,613 @@
+{
+  "find a 30 minute slot tomorrow for a design sync": {
+    "normalizedCommand": "find a 30 minute slot tomorrow for a design sync",
+    "intent": {
+      "intent_type": "research",
+      "goal": "find a 30 minute slot tomorrow for a design sync",
+      "entities": [
+        "30 minute slot",
+        "design sync"
+      ],
+      "constraints": [
+        "tomorrow"
+      ],
+      "prohibited_actions": [],
+      "requires_approval": false,
+      "confidence": 1.0,
+      "needs_clarification": false,
+      "clarifying_question": null
+    },
+    "decision": {
+      "status": "ready",
+      "message": "Your proposal is ready. Nothing has been carried out."
+    },
+    "source": "model",
+    "latencyMs": 14434.51,
+    "compiler": "november_live_local_models",
+    "compiledAt": "2026-10-11T21:28:20.241516+00:00"
+  },
+  "email Priya about the launch checklist": {
+    "normalizedCommand": "email Priya about the launch checklist",
+    "intent": {
+      "intent_type": "execute",
+      "goal": "email Priya about the launch checklist",
+      "entities": [
+        "Priya"
+      ],
+      "constraints": [],
+      "prohibited_actions": [],
+      "requires_approval": true,
+      "confidence": 1.0,
+      "needs_clarification": false,
+      "clarifying_question": null
+    },
+    "decision": {
+      "status": "approval_required",
+      "message": "This would change something outside November. Browser research can begin; website interactions require exact approval."
+    },
+    "source": "model",
+    "latencyMs": 11268.19,
+    "compiler": "november_live_local_models",
+    "compiledAt": "2026-10-11T21:28:31.510805+00:00"
+  },
+  "draft an email to Ben about the budget, but do not send it": {
+    "normalizedCommand": "draft an email to Ben about the budget, but do not send it",
+    "intent": {
+      "intent_type": "draft",
+      "goal": "draft an email to Ben about the budget, but do not send it",
+      "entities": [
+        "Ben",
+        "budget"
+      ],
+      "constraints": [],
+      "prohibited_actions": [
+        "send"
+      ],
+      "requires_approval": false,
+      "confidence": 1.0,
+      "needs_clarification": false,
+      "clarifying_question": null
+    },
+    "decision": {
+      "status": "ready",
+      "message": "Your proposal is ready. Nothing has been carried out."
+    },
+    "source": "model",
+    "latencyMs": 13627.34,
+    "compiler": "november_live_local_models",
+    "compiledAt": "2026-10-11T21:28:45.138605+00:00"
+  },
+  "can you find me an hour tomorrow to meet with Ben": {
+    "normalizedCommand": "can you find me an hour tomorrow to meet with Ben",
+    "intent": {
+      "intent_type": "research",
+      "goal": "can you find me an hour tomorrow to meet with Ben",
+      "entities": [
+        "Ben"
+      ],
+      "constraints": [
+        "tomorrow"
+      ],
+      "prohibited_actions": [],
+      "requires_approval": false,
+      "confidence": 1.0,
+      "needs_clarification": false,
+      "clarifying_question": null
+    },
+    "decision": {
+      "status": "ready",
+      "message": "Your proposal is ready. Nothing has been carried out."
+    },
+    "source": "model",
+    "latencyMs": 11523.89,
+    "compiler": "november_live_local_models",
+    "compiledAt": "2026-10-11T21:28:56.663879+00:00"
+  },
+  "schedule a 45 minute meeting slot for tomorrow": {
+    "normalizedCommand": "schedule a 45 minute meeting slot for tomorrow",
+    "intent": {
+      "intent_type": "draft",
+      "goal": "schedule a 45 minute meeting slot for tomorrow",
+      "entities": [],
+      "constraints": [
+        "45 minutes",
+        "tomorrow"
+      ],
+      "prohibited_actions": [],
+      "requires_approval": false,
+      "confidence": 1.0,
+      "needs_clarification": false,
+      "clarifying_question": null
+    },
+    "decision": {
+      "status": "ready",
+      "message": "Your proposal is ready. Nothing has been carried out."
+    },
+    "source": "model",
+    "latencyMs": 11429.74,
+    "compiler": "november_live_local_models",
+    "compiledAt": "2026-10-11T21:29:08.094059+00:00"
+  },
+  "email Ben about the hiring plan": {
+    "normalizedCommand": "email Ben about the hiring plan",
+    "intent": {
+      "intent_type": "execute",
+      "goal": "email Ben about the hiring plan",
+      "entities": [
+        "Ben"
+      ],
+      "constraints": [],
+      "prohibited_actions": [],
+      "requires_approval": true,
+      "confidence": 1.0,
+      "needs_clarification": false,
+      "clarifying_question": null
+    },
+    "decision": {
+      "status": "approval_required",
+      "message": "This would change something outside November. Browser research can begin; website interactions require exact approval."
+    },
+    "source": "model",
+    "latencyMs": 10718.26,
+    "compiler": "november_live_local_models",
+    "compiledAt": "2026-10-11T21:29:18.814221+00:00"
+  },
+  "email Dana about the contract": {
+    "normalizedCommand": "email Dana about the contract",
+    "intent": {
+      "intent_type": "execute",
+      "goal": "email Dana about the contract",
+      "entities": [
+        "Dana",
+        "contract"
+      ],
+      "constraints": [],
+      "prohibited_actions": [],
+      "requires_approval": true,
+      "confidence": 1.0,
+      "needs_clarification": false,
+      "clarifying_question": null
+    },
+    "decision": {
+      "status": "approval_required",
+      "message": "This would change something outside November. Browser research can begin; website interactions require exact approval."
+    },
+    "source": "model",
+    "latencyMs": 10737.0,
+    "compiler": "november_live_local_models",
+    "compiledAt": "2026-10-11T21:29:29.555127+00:00"
+  },
+  "find a slot on Wednesday for a quick sync": {
+    "normalizedCommand": "find a slot on Wednesday for a quick sync",
+    "intent": {
+      "intent_type": "research",
+      "goal": "find a slot on Wednesday for a quick sync",
+      "entities": [
+        "Wednesday",
+        "quick sync"
+      ],
+      "constraints": [
+        "Wednesday"
+      ],
+      "prohibited_actions": [],
+      "requires_approval": false,
+      "confidence": 1.0,
+      "needs_clarification": false,
+      "clarifying_question": null
+    },
+    "decision": {
+      "status": "ready",
+      "message": "Your proposal is ready. Nothing has been carried out."
+    },
+    "source": "model",
+    "latencyMs": 13092.88,
+    "compiler": "november_live_local_models",
+    "compiledAt": "2026-10-11T21:29:42.648598+00:00"
+  },
+  "find a 30 minute slot tomorrow to review the budget": {
+    "normalizedCommand": "find a 30 minute slot tomorrow to review the budget",
+    "intent": {
+      "intent_type": "research",
+      "goal": "find a 30 minute slot tomorrow to review the budget",
+      "entities": [
+        "30 minute slot",
+        "tomorrow",
+        "review the budget"
+      ],
+      "constraints": [
+        "30 minutes",
+        "tomorrow"
+      ],
+      "prohibited_actions": [],
+      "requires_approval": false,
+      "confidence": 1.0,
+      "needs_clarification": false,
+      "clarifying_question": null
+    },
+    "decision": {
+      "status": "ready",
+      "message": "Your proposal is ready. Nothing has been carried out."
+    },
+    "source": "model",
+    "latencyMs": 3516.33,
+    "compiler": "november_live_local_models",
+    "compiledAt": "2026-10-11T21:29:46.167478+00:00"
+  },
+  "email Dana about the renewal": {
+    "normalizedCommand": "email Dana about the renewal",
+    "intent": {
+      "intent_type": "execute",
+      "goal": "email Dana about the renewal",
+      "entities": [
+        "Dana"
+      ],
+      "constraints": [],
+      "prohibited_actions": [],
+      "requires_approval": true,
+      "confidence": 1.0,
+      "needs_clarification": false,
+      "clarifying_question": null
+    },
+    "decision": {
+      "status": "approval_required",
+      "message": "This would change something outside November. Browser research can begin; website interactions require exact approval."
+    },
+    "source": "model",
+    "latencyMs": 2627.75,
+    "compiler": "november_live_local_models",
+    "compiledAt": "2026-10-11T21:29:48.796149+00:00"
+  },
+  "draft a note to Asha about the offsite but don't send it": {
+    "normalizedCommand": "draft a note to Asha about the offsite but don't send it",
+    "intent": {
+      "intent_type": "draft",
+      "goal": "draft a note to Asha about the offsite but don't send it",
+      "entities": [
+        "Asha"
+      ],
+      "constraints": [],
+      "prohibited_actions": [
+        "send"
+      ],
+      "requires_approval": false,
+      "confidence": 1.0,
+      "needs_clarification": false,
+      "clarifying_question": null
+    },
+    "decision": {
+      "status": "ready",
+      "message": "Your proposal is ready. Nothing has been carried out."
+    },
+    "source": "model",
+    "latencyMs": 3411.74,
+    "compiler": "november_live_local_models",
+    "compiledAt": "2026-10-11T21:29:52.208935+00:00"
+  },
+  "find me a meeting slot tomorrow with the vendor": {
+    "normalizedCommand": "find me a meeting slot tomorrow with the vendor",
+    "intent": {
+      "intent_type": "research",
+      "goal": "find me a meeting slot tomorrow with the vendor",
+      "entities": [
+        "vendor"
+      ],
+      "constraints": [
+        "tomorrow"
+      ],
+      "prohibited_actions": [],
+      "requires_approval": false,
+      "confidence": 1.0,
+      "needs_clarification": false,
+      "clarifying_question": null
+    },
+    "decision": {
+      "status": "ready",
+      "message": "Your proposal is ready. Nothing has been carried out."
+    },
+    "source": "model",
+    "latencyMs": 2860.93,
+    "compiler": "november_live_local_models",
+    "compiledAt": "2026-10-11T21:29:55.071316+00:00"
+  },
+  "find an hour tomorrow for a planning meeting": {
+    "normalizedCommand": "find an hour tomorrow for a planning meeting",
+    "intent": {
+      "intent_type": "draft",
+      "goal": "find an hour tomorrow for a planning meeting",
+      "entities": [
+        "planning meeting"
+      ],
+      "constraints": [
+        "tomorrow"
+      ],
+      "prohibited_actions": [],
+      "requires_approval": false,
+      "confidence": 1.0,
+      "needs_clarification": false,
+      "clarifying_question": null
+    },
+    "decision": {
+      "status": "ready",
+      "message": "Your proposal is ready. Nothing has been carried out."
+    },
+    "source": "model",
+    "latencyMs": 2888.47,
+    "compiler": "november_live_local_models",
+    "compiledAt": "2026-10-11T21:29:57.960902+00:00"
+  },
+  "email Priya about the roadmap": {
+    "normalizedCommand": "email Priya about the roadmap",
+    "intent": {
+      "intent_type": "execute",
+      "goal": "email Priya about the roadmap",
+      "entities": [
+        "Priya"
+      ],
+      "constraints": [],
+      "prohibited_actions": [],
+      "requires_approval": true,
+      "confidence": 1.0,
+      "needs_clarification": false,
+      "clarifying_question": null
+    },
+    "decision": {
+      "status": "approval_required",
+      "message": "This would change something outside November. Browser research can begin; website interactions require exact approval."
+    },
+    "source": "model",
+    "latencyMs": 2695.24,
+    "compiler": "november_live_local_models",
+    "compiledAt": "2026-10-11T21:30:00.656968+00:00"
+  },
+  "email Asha about the quarterly numbers": {
+    "normalizedCommand": "email Asha about the quarterly numbers",
+    "intent": {
+      "intent_type": "research",
+      "goal": "email Asha about the quarterly numbers",
+      "entities": [
+        "Asha"
+      ],
+      "constraints": [
+        "quarterly numbers"
+      ],
+      "prohibited_actions": [],
+      "requires_approval": false,
+      "confidence": 1.0,
+      "needs_clarification": false,
+      "clarifying_question": null
+    },
+    "decision": {
+      "status": "ready",
+      "message": "Your proposal is ready. Nothing has been carried out."
+    },
+    "source": "model",
+    "latencyMs": 2881.51,
+    "compiler": "november_live_local_models",
+    "compiledAt": "2026-10-11T21:30:03.539806+00:00"
+  },
+  "draft an email to Dana about pricing, do not send it": {
+    "normalizedCommand": "draft an email to Dana about pricing, do not send it",
+    "intent": {
+      "intent_type": "draft",
+      "goal": "draft an email to Dana about pricing, do not send it",
+      "entities": [
+        "Dana"
+      ],
+      "constraints": [],
+      "prohibited_actions": [
+        "send"
+      ],
+      "requires_approval": false,
+      "confidence": 1.0,
+      "needs_clarification": false,
+      "clarifying_question": null
+    },
+    "decision": {
+      "status": "ready",
+      "message": "Your proposal is ready. Nothing has been carried out."
+    },
+    "source": "model",
+    "latencyMs": 3119.66,
+    "compiler": "november_live_local_models",
+    "compiledAt": "2026-10-11T21:30:06.660229+00:00"
+  },
+  "find a meeting slot tomorrow": {
+    "normalizedCommand": "find a meeting slot tomorrow",
+    "intent": {
+      "intent_type": "research",
+      "goal": "find a meeting slot tomorrow",
+      "entities": [
+        "tomorrow"
+      ],
+      "constraints": [],
+      "prohibited_actions": [],
+      "requires_approval": false,
+      "confidence": 1.0,
+      "needs_clarification": false,
+      "clarifying_question": null
+    },
+    "decision": {
+      "status": "ready",
+      "message": "Your proposal is ready. Nothing has been carried out."
+    },
+    "source": "model",
+    "latencyMs": 2616.19,
+    "compiler": "november_live_local_models",
+    "compiledAt": "2026-10-11T21:30:09.277029+00:00"
+  },
+  "email Priya about the invoice": {
+    "normalizedCommand": "email Priya about the invoice",
+    "intent": {
+      "intent_type": "execute",
+      "goal": "email Priya about the invoice",
+      "entities": [
+        "Priya"
+      ],
+      "constraints": [],
+      "prohibited_actions": [],
+      "requires_approval": true,
+      "confidence": 1.0,
+      "needs_clarification": false,
+      "clarifying_question": null
+    },
+    "decision": {
+      "status": "approval_required",
+      "message": "This would change something outside November. Browser research can begin; website interactions require exact approval."
+    },
+    "source": "model",
+    "latencyMs": 2700.14,
+    "compiler": "november_live_local_models",
+    "compiledAt": "2026-10-11T21:30:11.977850+00:00"
+  },
+  "find a slot tomorrow to meet Eli": {
+    "normalizedCommand": "find a slot tomorrow to meet Eli",
+    "intent": {
+      "intent_type": "research",
+      "goal": "find a slot tomorrow to meet Eli",
+      "entities": [
+        "Eli"
+      ],
+      "constraints": [
+        "tomorrow"
+      ],
+      "prohibited_actions": [],
+      "requires_approval": false,
+      "confidence": 1.0,
+      "needs_clarification": false,
+      "clarifying_question": null
+    },
+    "decision": {
+      "status": "ready",
+      "message": "Your proposal is ready. Nothing has been carried out."
+    },
+    "source": "model",
+    "latencyMs": 2806.62,
+    "compiler": "november_live_local_models",
+    "compiledAt": "2026-10-11T21:30:14.785908+00:00"
+  },
+  "email Eli about the design review": {
+    "normalizedCommand": "email Eli about the design review",
+    "intent": {
+      "intent_type": "execute",
+      "goal": "email Eli about the design review",
+      "entities": [
+        "Eli"
+      ],
+      "constraints": [],
+      "prohibited_actions": [],
+      "requires_approval": true,
+      "confidence": 1.0,
+      "needs_clarification": false,
+      "clarifying_question": null
+    },
+    "decision": {
+      "status": "approval_required",
+      "message": "This would change something outside November. Browser research can begin; website interactions require exact approval."
+    },
+    "source": "model",
+    "latencyMs": 2731.13,
+    "compiler": "november_live_local_models",
+    "compiledAt": "2026-10-11T21:30:17.518258+00:00"
+  },
+  "find time tomorrow for a 50 minute workshop": {
+    "normalizedCommand": "find time tomorrow for a 50 minute workshop",
+    "intent": {
+      "intent_type": "clarify",
+      "goal": "find time tomorrow for a 50 minute workshop",
+      "entities": [],
+      "constraints": [
+        "50 minutes",
+        "workshop"
+      ],
+      "prohibited_actions": [],
+      "requires_approval": false,
+      "confidence": 0.0,
+      "needs_clarification": true,
+      "clarifying_question": "I could not reliably preserve the requested action. Please rephrase."
+    },
+    "decision": {
+      "status": "clarify",
+      "message": "I could not reliably preserve the requested action. Please rephrase."
+    },
+    "source": "model",
+    "latencyMs": 3322.65,
+    "compiler": "november_live_local_models",
+    "compiledAt": "2026-10-11T21:30:20.842161+00:00"
+  },
+  "draft an email to Priya about the delay, but do not send it": {
+    "normalizedCommand": "draft an email to Priya about the delay, but do not send it",
+    "intent": {
+      "intent_type": "draft",
+      "goal": "draft an email to Priya about the delay, but do not send it",
+      "entities": [
+        "Priya"
+      ],
+      "constraints": [],
+      "prohibited_actions": [
+        "send"
+      ],
+      "requires_approval": false,
+      "confidence": 1.0,
+      "needs_clarification": false,
+      "clarifying_question": null
+    },
+    "decision": {
+      "status": "ready",
+      "message": "Your proposal is ready. Nothing has been carried out."
+    },
+    "source": "model",
+    "latencyMs": 3202.16,
+    "compiler": "november_live_local_models",
+    "compiledAt": "2026-10-11T21:30:24.044912+00:00"
+  },
+  "find a slot tomorrow for an interview": {
+    "normalizedCommand": "find a slot tomorrow for an interview",
+    "intent": {
+      "intent_type": "research",
+      "goal": "find a slot tomorrow for an interview",
+      "entities": [
+        "interview"
+      ],
+      "constraints": [
+        "tomorrow"
+      ],
+      "prohibited_actions": [],
+      "requires_approval": false,
+      "confidence": 1.0,
+      "needs_clarification": false,
+      "clarifying_question": null
+    },
+    "decision": {
+      "status": "ready",
+      "message": "Your proposal is ready. Nothing has been carried out."
+    },
+    "source": "model",
+    "latencyMs": 2816.61,
+    "compiler": "november_live_local_models",
+    "compiledAt": "2026-10-11T21:30:26.864067+00:00"
+  },
+  "email Eli about the standup notes": {
+    "normalizedCommand": "email Eli about the standup notes",
+    "intent": {
+      "intent_type": "execute",
+      "goal": "email Eli about the standup notes",
+      "entities": [
+        "Eli"
+      ],
+      "constraints": [],
+      "prohibited_actions": [],
+      "requires_approval": true,
+      "confidence": 1.0,
+      "needs_clarification": false,
+      "clarifying_question": null
+    },
+    "decision": {
+      "status": "approval_required",
+      "message": "This would change something outside November. Browser research can begin; website interactions require exact approval."
+    },
+    "source": "model",
+    "latencyMs": 2730.68,
+    "compiler": "november_live_local_models",
+    "compiledAt": "2026-10-11T21:30:29.596301+00:00"
+  }
+}
