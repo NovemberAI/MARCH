@@ -20,6 +20,9 @@
   button { font:inherit; padding:7px 14px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--ink); cursor:pointer; }
   button.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
   button.on { outline:2px solid var(--accent); }
+  #talk { font-weight:600; padding:10px 18px; }
+  #talk:not(:disabled) { background:#1f7a5c; border-color:#1f7a5c; color:#fff; }
+  #talk.holding { background:#b42318 !important; border-color:#b42318 !important; color:#fff; }
   button:disabled { opacity:.5; cursor:wait; }
   textarea, input { width:100%; font:inherit; padding:9px; border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--ink); }
   textarea { min-height:64px; resize:vertical; }
@@ -54,7 +57,7 @@
       <button class="primary" id="talk" disabled>Hold to talk (or hold Space)</button>
       <button id="vcancel" disabled>Cancel</button>
     </div>
-    <p id="vmsg" class="note">Microphone off.</p>
+    <p id="vmsg" class="note">Microphone off. Turn it on, then hold the green button (or Space) — or say “Hey March”.</p>
     <p id="vwho"></p>
     <details><summary>Enroll a consenting volunteer</summary>
       <p class="note">Stores an encrypted voice embedding in MongoDB (no raw audio). Used only to open this fictional workspace. Revocable anytime.</p>
@@ -320,12 +323,14 @@ async function micOff(msg) {
 }
 async function holdStart() {
   if (!captureId || holding) return; holding = true;
+  $("talk").classList.add("holding"); $("talk").textContent = "● Listening… release to send";
   const st = await vapi("/api/voice/hold/start").catch(e => { holding = false; $("vmsg").textContent = e.message; });
   if (st) wakeCount = st.wake_count;
 }
-function holdEnd() { if (!holding) return; holding = false; node && node.port.postMessage({type:"finish"}); }
+function holdEnd() { if (!holding) return; holding = false;
+  $("talk").classList.remove("holding"); $("talk").textContent = "Hold to talk (or hold Space)"; node && node.port.postMessage({type:"finish"}); }
 $("mic").onclick = () => stream ? micOff("Microphone off. Audio discarded.") : micOn();
-$("talk").onmousedown = holdStart; $("talk").onmouseup = holdEnd; $("talk").onmouseleave = holdEnd;
+$("talk").onpointerdown = (e) => { e.preventDefault(); holdStart(); }; $("talk").onpointerup = holdEnd; $("talk").onpointerleave = holdEnd;
 $("vcancel").onclick = () => vapi("/api/voice/cancel");
 window.addEventListener("keydown", e => { if (e.code === "Space" && !e.repeat && !/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) { e.preventDefault(); holdStart(); } });
 window.addEventListener("keyup", e => { if (e.code === "Space" && !/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) { e.preventDefault(); holdEnd(); } });

@@ -230,7 +230,12 @@ def make_handler(app: App) -> type[BaseHTTPRequestHandler]:
             if path == "/api/voice/status":
                 if not app.voice:
                     return self._send(200, {"available": False, "error": app.voice_error})
-                return self._send(200, {**app.voice.snapshot(), "desk": app.desk.status()})
+                from march.voice import WAKE_PHRASE, wake_text
+
+                snap = app.voice.snapshot()
+                snap["message"] = wake_text(snap.get("message", ""))
+                snap["wake_phrase"] = WAKE_PHRASE
+                return self._send(200, {**snap, "desk": app.desk.status()})
             run_match = re.fullmatch(r"/api/runs/([\w-]+)", path)
             if run_match:
                 try:

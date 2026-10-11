@@ -2,6 +2,7 @@
 identifies the speaker on that same buffer and routes to the matched employee's workspace."""
 
 import os
+import re
 import secrets
 import threading
 from dataclasses import dataclass, field
@@ -246,7 +247,12 @@ def build_voice(
     """Construct November's VoiceLoop with November's own detectors and ASR, wrapped for ID."""
     from november.asr.local import LocalWhisper
     from november.audio.controller import VoiceLoop
-    from november.audio.detectors import SherpaWakeWordDetector, SileroVoiceActivityDetector
+    from november.audio import controller as november_controller
+    from november.audio.detectors import (
+        KWS_DIRECTORY,
+        SherpaWakeWordDetector,
+        SileroVoiceActivityDetector,
+    )
     from november.storage.metrics import VoiceMetrics
 
     from march.speaker import RUNTIME, EcapaEmbedder
@@ -255,16 +261,48 @@ def build_voice(
         os.getenv("NOVEMBER_VOICE_MODELS", "/Users/shashwatraj/november-1/.runtime/voice")
     )
     name = os.getenv("NOVEMBER_ASR_MODEL", "small.en")
+    kws_root = march_wake_root(root, KWS_DIRECTORY)
+    # November's transcript-side wake check is a module constant; MARCH swaps the phrase only.
+    november_controller.WAKE_PREFIX = WAKE_PREFIX
     recognizer = IdentifyingRecognizer(LocalWhisper(root / name), EcapaEmbedder())
     desk = Desk(store, orch, ProfileStore(store.db, mode, org_id), recognizer, mode, org_id)
     loop = VoiceLoop(
         desk,  # type: ignore[arg-type]  # Duck-typed Session: snapshot/submit/cancel/clear.
-        SherpaWakeWordDetector(root),
+        SherpaWakeWordDetector(kws_root),
         SileroVoiceActivityDetector(root),
         recognizer,
         VoiceMetrics(RUNTIME / "voice-metrics.sqlite3"),
     )
     return loop, desk
+
+
+WAKE_PHRASE = "Hey March"
+WAKE_PREFIX = re.compile(r"^\s*hey[,! .]*march\b[,! .:]*", re.I)
+
+
+def march_wake_root(november_root: Path, kws_directory: str) -> Path:
+    """A MARCH-owned keywords dir: November's KWS model (symlinked, unmodified) + 'HEY MARCH'.
+    The internal label stays HEY_NOVEMBER because November's VoiceLoop matches on it."""
+    import sentencepiece as spm
+
+    from march.speaker import RUNTIME
+
+    out = RUNTIME / "voice_kws"
+    out.mkdir(parents=True, exist_ok=True)
+    link = out / kws_directory
+    if not link.exists():
+        link.symlink_to(november_root / kws_directory, target_is_directory=True)
+    tokenizer = spm.SentencePieceProcessor(model_file=str(link / "bpe.model"))
+    lines = [
+        " ".join(tokenizer.encode("HEY MARCH", out_type=str)) + " @HEY_NOVEMBER",
+        " ".join(tokenizer.encode("CANCEL", out_type=str)) + " @CANCEL",
+    ]
+    (out / "keywords.txt").write_text("\n".join(lines) + "\n")
+    return out
+
+
+def wake_text(message: str) -> str:
+    return message.replace("Hey November", WAKE_PHRASE).replace("restart November", "restart MARCH")
 
 
 def silence(seconds: float) -> Any:
