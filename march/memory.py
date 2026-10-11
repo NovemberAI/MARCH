@@ -256,3 +256,47 @@ def handle_command(store: Store, scope: RequestScope, run_id: str, text: str) ->
         "items": [{"id": m["_id"], "kind": m["kind"], "key": m["key"], "text": m["text"]} for m in saved],
         "message": ("Noted: " + "; ".join(m["text"] for m in saved)) if saved else "I didn't find anything to remember.",
     }
+
+
+QUESTION = re.compile(
+    r"^\s*(?:hey\s+march[,!. ]*)?(?:(?:can|could) you\s+)?(?:please\s+)?(?:tell me|answer me|remind me)?\s*"
+    r"(?:what|what's|whats|when|who|where|which|how|do|does|did|is|are|am|should|have)\b|\?\s*$",
+    re.I,
+)
+
+
+def is_question(text: str) -> bool:
+    return bool(QUESTION.search(text))
+
+
+def answer(store: Store, scope: RequestScope, question: str, display_name: str) -> dict[str, Any]:
+    """Answer from THIS employee's own memory only, via the local model. No other scope is read."""
+    import json as _json
+    import urllib.request
+
+    prefs = [m["text"] for m in store.db.memories.find(
+        {**scope.filter(), "kind": "preference", "status": "active"})]
+    notes, method = recall(store, scope, question, 6)
+    facts = list(dict.fromkeys(prefs + [n["text"] for n in notes if n["kind"] != "preference"]))
+    system = (
+        f"You are MARCH, the private desk assistant for {display_name}. Answer in 1-2 short, "
+        "friendly sentences. Use ONLY the facts below for anything about this person. If the facts "
+        "don't cover a personal question, say you don't know yet and that they can tell you "
+        "(e.g. 'remember that ...'). For general-knowledge questions answer briefly. Never invent "
+        "personal details.\nFacts about this person:\n" + ("\n".join(f"- {f}" for f in facts) or "- (none yet)")
+    )
+    body = _json.dumps({
+        "model": "qwen3:4b-instruct-2507-q4_K_M", "stream": False, "think": False,
+        "messages": [{"role": "system", "content": system}, {"role": "user", "content": question}],
+        "options": {"temperature": 0.2, "num_predict": 120},
+    }).encode()
+    try:
+        opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+        req = urllib.request.Request("http://127.0.0.1:11434/api/chat", data=body,
+                                     headers={"Content-Type": "application/json"})
+        with opener.open(req, timeout=30) as resp:
+            text = _json.loads(resp.read())["message"]["content"].strip()
+    except Exception:
+        text = ("Here's what I know about you: " + "; ".join(facts)) if facts else \
+            "I don't know that yet. You can tell me, for example: 'remember that I prefer 25 minute meetings'."
+    return {"capability": "answer", "message": text[:600], "factsUsed": len(facts), "recallMethod": method}

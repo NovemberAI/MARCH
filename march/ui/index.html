@@ -170,11 +170,15 @@ function renderResult(run) {
       (run.state === "browsing" ? `<button id="bcancel">Cancel research</button>` : "");
     setTimeout(() => { const b = $("bcancel"); if (b) b.onclick = () => api(`/api/runs/${run._id}/cancel`, {}); }, 0);
     if (run.state === "browsing") setTimeout(async () => { try { const fresh = await api(`/api/runs/${run._id}`); if (current) renderResult(fresh); } catch (e) {} }, 1500);
+  } else if (r.capability === "answer") {
+    html = `<p style="font-size:18px">${esc(r.message)}</p><p class="note">Answered from ${esc(current ? current.employee.displayName : "your")}'s own memory (${r.factsUsed} facts) by the local model.</p>`;
+    sayLocal(r.message, run._id);
   } else if (r.capability === "memory.list") {
     html = `<p>${esc(r.message)}</p>` + (r.items.length ? `<ul>${r.items.map(i => `<li>${esc(i.text)} <span class="note">(${esc(i.kind)})</span></li>`).join("")}</ul>` : "");
   } else html = `<p>${esc(r.message || "Done.")}</p>`;
   if (r.relatedNotes && r.relatedNotes.length) html += `<p class="note">Recalled from your memory (${esc(run.recallMethod || "")}): ${r.relatedNotes.map(n => esc(n.text)).join(" · ")}</p>`;
   if (!run.november || !run.november.intent) { $("result").innerHTML = html + `<p class="note">Handled by MARCH memory after NovemberAI transcript checks.</p>`; return; }
+  if (r.capability !== "answer" && r.message && !["calendar.find_slots","mail.prepare","browser.research"].includes(r.capability)) sayLocal(r.message, run._id);
   html += `<details><summary>NovemberAI compiled intent (${esc(n.compiler)}, ${Math.round(n.latencyMs||0)} ms)</summary><pre>${esc(JSON.stringify({command:n.normalizedCommand, intent:n.intent, decision:n.decision}, null, 2))}</pre></details>`;
   $("result").innerHTML = html;
 }
@@ -292,6 +296,12 @@ function ackKind(run) {
   return null;
 }
 let spokenRuns = new Set();
+// On-device browser speech for answers (nothing leaves the laptop).
+function sayLocal(text, id) {
+  if (!window.speechSynthesis || spokenRuns.has("local:" + id)) return;
+  spokenRuns.add("local:" + id);
+  const u = new SpeechSynthesisUtterance(text); u.rate = 1.05; speechSynthesis.cancel(); speechSynthesis.speak(u);
+}
 function maybeSpeak(run) {
   if (!run || spokenRuns.has(run._id)) return;
   const kind = ackKind(run); if (!kind) return;

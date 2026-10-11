@@ -152,6 +152,11 @@ class Orchestrator:
             else:
                 result = {"capability": capability, "status": "disabled",
                           "message": "Browser tasks are disabled in evaluation mode (no live side effects)."}
+        elif capability in {"clarify", "unsupported"} and memory.is_question(compiled["normalizedCommand"]):
+            # NovemberAI compiles tasks, not questions; MARCH answers from this employee's memory.
+            name = self.store.employee(scope)["displayName"].split(" (")[0]
+            result = memory.answer(self.store, scope, compiled["normalizedCommand"], name)
+            capability = "answer"
         elif capability in {"clarify", "cancelled"}:
             result = {"capability": capability, "message": compiled["decision"]["message"]}
         else:
