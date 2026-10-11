@@ -172,7 +172,8 @@ class Harness:
         )
         self.db.harness_versions.update_one(
             {"_id": candidate_id},
-            {"$set": {"lifecycleStatus": "active", "evaluationId": evaluation_id, "promotedAt": now()}},
+            {"$set": {"lifecycleStatus": "active", "evaluationId": evaluation_id, "promotedAt": now(),
+                      "label": candidate["label"].replace("-candidate", "-promoted")}},
         )
         return True
 
