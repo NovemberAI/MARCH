@@ -268,6 +268,25 @@ def make_handler(app: App) -> type[BaseHTTPRequestHandler]:
                     text = str(body.get("text", ""))[:600]
                     run = app.orch.handle(scope, text, "november_text")
                     return self._send(200, {"run": _public_run(run), **app.view(scope)})
+                if path == "/api/tts":
+                    from march import tts
+
+                    kind = str(body.get("kind", ""))
+                    if kind not in tts.TEMPLATES:
+                        return self._send(400, {"error": "bad_tts_kind"})
+                    first = {"emp_asha": "Asha", "emp_ben": "Ben", "emp_casey": "Casey"}.get(scope.employee_id)
+                    audio = tts.speak(tts.acknowledgment(kind, first))
+                    if audio is None:
+                        self.send_response(204)
+                        self.end_headers()
+                        return None
+                    self.send_response(200)
+                    self.send_header("Content-Type", "audio/mpeg")
+                    self.send_header("Cache-Control", "no-store")
+                    self.send_header("Content-Length", str(len(audio)))
+                    self.end_headers()
+                    self.wfile.write(audio)
+                    return None
                 if path == "/api/harness/improve":
                     app.start_cycle(scope)
                     return self._send(200, app.harness_view(scope))

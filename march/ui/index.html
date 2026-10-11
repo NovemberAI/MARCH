@@ -138,6 +138,7 @@ async function select(id) {
 
 function renderResult(run) {
   if (!run) return;
+  maybeSpeak(run);
   $("result-card").hidden = false;
   const r = run.result || {};
   const n = run.november || {};
@@ -226,6 +227,34 @@ async function renderHarness() {
 }
 $("h-improve") && ($("h-improve").onclick = async () => { await api("/api/harness/improve", {}).catch(e => alert(e.message)); renderHarness(); });
 $("h-refresh") && ($("h-refresh").onclick = renderHarness);
+
+// ElevenLabs talk-back: only generic template acknowledgments (server enforces allowlist).
+let ttsAudio = null;
+async function talkBack(kind) {
+  try {
+    const res = await fetch("/api/tts", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({kind})});
+    if (res.status !== 200) return;
+    const url = URL.createObjectURL(await res.blob());
+    if (ttsAudio) { ttsAudio.pause(); URL.revokeObjectURL(ttsAudio.src); }
+    ttsAudio = new Audio(url); await ttsAudio.play();
+  } catch (e) {}
+}
+function ackKind(run) {
+  const r = run.result || {};
+  if (run.state === "failed") return "error";
+  if (r.capability === "calendar.find_slots") return "slots_ready";
+  if (r.capability === "mail.prepare" && r.status === "prepared") return r.actionType === "mail.draft" ? "draft_ready" : "approval_needed";
+  if (r.capability === "browser.research" && run.state !== "browsing") return "research_done";
+  if ((r.capability || "").startsWith("memory.")) return "noted";
+  if (r.capability === "cancelled") return "cancelled";
+  return null;
+}
+let spokenRuns = new Set();
+function maybeSpeak(run) {
+  if (!run || spokenRuns.has(run._id)) return;
+  const kind = ackKind(run); if (!kind) return;
+  spokenRuns.add(run._id); talkBack(kind);
+}
 
 function render(view) {
   const prevShown = current && current.shownRun;
@@ -330,6 +359,7 @@ async function pollVoice() {
       }
     } else if (["unknown","ambiguous","insufficient_audio","no_profiles"].includes(last.status)) {
       $("vwho").innerHTML = `<span class="warn">${esc(last.message)}</span>`;
+      if (last.status === "unknown" && last.utteranceId && !spokenRuns.has(last.utteranceId)) { spokenRuns.add(last.utteranceId); talkBack("unknown_speaker"); }
       if (current) { current = null; ["ask","result-card","actions-card","runs-card"].forEach(id => $(id).hidden = true); renderWho(); }
     }
     $("revoke").hidden = !(current && d.enrolled.includes(current.employee.id));
