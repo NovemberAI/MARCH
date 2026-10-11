@@ -1,5 +1,7 @@
 """One request: November compile -> MARCH scope -> scoped fixture tool -> run + pending action."""
 
+import os
+import re
 from collections.abc import Callable
 from datetime import datetime
 from typing import Any
@@ -124,7 +126,13 @@ class Orchestrator:
                 result["actionType"] = action["actionType"]
                 result["payloadHash"] = action["payloadHash"]
         elif capability == "browser.research":
-            if browser.enabled(scope):
+            private = re.search(r"gmail|mail\.google|calendar\.google|drive\.google|docs\.google", compiled["normalizedCommand"], re.I)
+            operator = os.getenv("MARCH_OPERATOR_EMPLOYEE", "emp_asha")
+            if private and scope.employee_id != operator:
+                result = {"capability": capability, "status": "blocked",
+                          "message": "Signed-in accounts (Gmail etc.) are available only to the desk operator. "
+                                     "I can open public websites for you."}
+            elif browser.enabled(scope):
                 task = dict(compiled["intent"])
                 urls = tools.browser_targets(compiled["normalizedCommand"])
                 if urls:  # Bare domains become explicit URLs the planner may open.
@@ -141,8 +149,9 @@ class Orchestrator:
                                 "message": "Researching public pages in the shared desk browser…"}},
                 )
                 return self.store.get_run(scope, run["_id"])
-            result = {"capability": capability, "status": "disabled",
-                      "message": "Browser tasks are disabled in evaluation mode (no live side effects)."}
+            else:
+                result = {"capability": capability, "status": "disabled",
+                          "message": "Browser tasks are disabled in evaluation mode (no live side effects)."}
         elif capability in {"clarify", "cancelled"}:
             result = {"capability": capability, "message": compiled["decision"]["message"]}
         else:
