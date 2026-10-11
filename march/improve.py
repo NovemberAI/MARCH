@@ -9,6 +9,7 @@ from collections import Counter
 from collections.abc import Callable
 from typing import Any
 
+from march import telemetry
 from march.db import Store, new_id, now
 from march.evaluation import EVAL_CLOCK, run_suite, seed_memories, wait_for_index
 from march.harness import ALLOWLIST, Harness, PatchRejected, validate_proposal
@@ -105,6 +106,7 @@ def run_cycle(
     if not wait_for_index(eval_store, org_id, suite=SUITE_VERSION):
         record.update(gateDecision="aborted", failureCodes=["vector_index_not_synced"])
         eval_store.db.evaluations.insert_one(record)
+        telemetry.trace_evaluation(record)
         return record
     dv = ("dev", "val")
     eval_orch.recall_cache = {}  # Each unique (employee, query) is embedded once per cycle.
@@ -118,6 +120,7 @@ def run_cycle(
     if not failing:
         record.update(gateDecision="no_failures_to_fix", completedAt=now())
         eval_store.db.evaluations.insert_one(record)
+        telemetry.trace_evaluation(record)
         return record
     tried = [
         {"patch": v.get("patch"), "status": v.get("lifecycleStatus"), "reasons": v.get("rejectionReasons")}
@@ -135,6 +138,7 @@ def run_cycle(
         record.update(gateDecision="proposal_rejected", failureCodes=[f"{type(exc).__name__}:{exc}"],
                       completedAt=now())
         eval_store.db.evaluations.insert_one(record)
+        telemetry.trace_evaluation(record)
         return record
     record.update(candidateVersionId=candidate["_id"], proposal=proposal)
     progress(f"Candidate patch {proposal['patch']}; evaluating on dev+val…")
@@ -181,5 +185,6 @@ def run_cycle(
         record.update(gateDecision="promoted" if promoted else "stale_parent_reevaluate")
     record["completedAt"] = now()
     eval_store.db.evaluations.insert_one(record)
+    telemetry.trace_evaluation(record)
     progress(f"Decision: {record['gateDecision']} {reasons}")
     return record

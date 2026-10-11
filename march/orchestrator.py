@@ -4,7 +4,7 @@ from collections.abc import Callable
 from datetime import datetime
 from typing import Any
 
-from march import actions, browser, memory, tools
+from march import actions, browser, memory, telemetry, tools
 from march.db import Store, now
 from march.harness import TOOL_CONSTANTS, Harness
 from march.november_bridge import COMPILE_ERRORS, IntentSource
@@ -52,7 +52,12 @@ class Orchestrator:
         notes = [d for d in recalled if d["kind"] != "preference"]
         return prefs, notes, method
 
-    def handle(
+    def handle(self, scope: RequestScope, text: str, input_source: str, **kwargs: Any) -> dict[str, Any]:
+        run = self._handle(scope, text, input_source, **kwargs)
+        telemetry.trace_run(run)  # Redacted, allowlisted fields only; no-op without a key.
+        return run
+
+    def _handle(
         self,
         scope: RequestScope,
         text: str,
