@@ -45,3 +45,13 @@ None. No accounts were created, no email was sent, no push, no paid service.
 - Recall has no relevance cutoff yet, so an unrelated note can be recalled; for example, the vendor note came back for a slot request. This is a candidate knob for M4.
 - The sandbox's Voyage autoEmbed query embedding is rate-limited. Recall retries with backoff; evals embed each unique (employee, query) once per cycle and are invalidated if any case falls back to lexical recall.
 - The office browser is one shared local Aside session limited to public pages, with no employee logins. Per-employee browser isolation is unverified (doc 06 gate).
+
+## M4 cycles (real, Atlas `march_eval.evaluations`)
+
+| Suite | What | Result |
+| --- | --- | --- |
+| suite_v1 (about 10 memories per employee) | baseline v1, all splits | dev 12/12, val 6/6, test 4/6 (c05: November clarify; b07: November intent=research for an email command) |
+| suite_v1 | cycle `b4f0699d…` for emp_asha | `no_failures_to_fix`: baseline 1.0/1.0/1.0 over 3 repeats, so no candidate |
+| suite_v2 (+20 ordinary history notes per employee; **added after v1 passed, disclosed**) | baseline v1, all splits | dev 10/12, val 6/6, test 4/6. **New real failures c03 and c07**: Casey's explicit 25-minute default was not in semantic top-6 once her history grew, so slots came out at 30 minutes |
+| suite_v2 | cycle 1 `2ba36d9d…` for emp_casey | **rejected**. Optimizer proposed `/retrieval/maxContextTokens=5000` (a field not wired in this build). dev+val 0.889 -> 0.889 over 3 paired repeats, noise band 0.0, no case fixed. Held-out test 4/6 -> 4/6. v1 stays active. |
+| suite_v2 | cycle 2 for emp_casey | running. Optimizer now sees which knobs are unwired, plus structural evidence `explicit_preference_existed_but_unused:<key>`. |

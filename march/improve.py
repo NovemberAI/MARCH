@@ -21,14 +21,14 @@ SUITE_VERSION = os.getenv("MARCH_SUITE", "suite_v2")
 
 FIELD_HELP = {
     "/retrieval/semanticTopK": "how many memories semantic vector search returns per request",
-    "/retrieval/recentTurnPairs": "recent conversation turns kept in context",
+    "/retrieval/recentTurnPairs": "recent conversation turns kept in context (not wired in this build; changing it has no effect)",
     "/retrieval/pinExplicitPreferences": "always load the employee's explicit typed preferences by direct indexed read, instead of only when semantic search happens to return them",
-    "/retrieval/includeLinkedNotes": "expand linked notes",
-    "/retrieval/maxContextTokens": "context budget",
+    "/retrieval/includeLinkedNotes": "expand linked notes (not wired in this build; changing it has no effect)",
+    "/retrieval/maxContextTokens": "context budget (not wired in this build; changing it has no effect)",
     "/workflow/schedulingPreferencePass": "for scheduling requests only, load scheduling.* preferences by direct read",
-    "/workflow/answerCoveragePass": "extra coverage check on answers",
-    "/workflow/maxReadToolCalls": "cap on read tool calls",
-    "/response/maxSpokenSentences": "spoken response length",
+    "/workflow/answerCoveragePass": "extra coverage check on answers (not wired in this build; changing it has no effect)",
+    "/workflow/maxReadToolCalls": "cap on read tool calls (not wired in this build; changing it has no effect)",
+    "/response/maxSpokenSentences": "spoken response length (not wired in this build; changing it has no effect)",
 }
 
 PROPOSAL_SCHEMA = {
@@ -115,6 +115,15 @@ def run_cycle(
     base_rates = [_rate(e, dv) for e in base_runs]
     noise = max(base_rates) - min(base_rates)
     failing = Counter(f for r in base_runs[0]["results"] if r["split"] == "dev" for f in r["failures"])
+    # Structural evidence: an explicit preference existed but the failing run did not use it.
+    from march.evaluation import fixture_memories
+
+    keys = {emp: {k for kind, k, _, _ in items if kind == "preference"}
+            for emp, items in fixture_memories(SUITE_VERSION).items()}
+    for r in base_runs[0]["results"]:
+        if r["split"] == "dev" and not r["pass"] and r.get("employee"):
+            for key in sorted(keys[r["employee"]] - set(r.get("preferencesUsed") or [])):
+                failing[f"explicit_preference_existed_but_unused:{key}"] += 1
     record.update(baseline={"rates": base_rates, "noiseBand": noise, "first": base_runs[0]})
     progress(f"Baseline dev+val pass rates {base_rates}; failure codes {dict(failing)}")
     if not failing:
