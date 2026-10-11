@@ -136,4 +136,29 @@ def test_email_command_never_routes_to_browser(orch, compiler, asha):
 
     compiler.add(november_output("email Asha about the quarterly numbers", "research", ["Asha"]))
     run = orch.handle(asha, "email Asha about the quarterly numbers", "november_text")
-    assert run["capability"] == "unsupported"
+    assert run["capability"] == "mail.prepare"
+
+
+def test_email_followups_fuzzy_names_and_real_addresses(orch, compiler, store, asha):
+    from tests.conftest import november_output
+
+    compiler.add(november_output("Email Priya about the launch plan.", "research", ["Priya"]))
+    run = orch.handle(asha, "Email Priya about the launch plan.", "november_voice")
+    assert run["capability"] == "mail.prepare" and run["result"]["status"] == "prepared"
+
+    compiler.add(november_output("draft an email to bend about the budget but do not send it.", "draft", ["Bend", "budget"], prohibited=["send"]))
+    run = orch.handle(asha, "draft an email to bend about the budget but do not send it.", "november_voice")
+    assert run["result"]["payload"]["to"] == ["ben@demo-office.example"] and run["result"]["heardAs"] == "Bend"
+    assert store.get_action(asha, run["pendingActionIds"][0])["dispatchable"] is False
+
+    text = "The email should be about the budget. So just say what's the status of the budget."
+    compiler.add(november_output(text, "research", []))
+    run = orch.handle(asha, text, "november_voice")
+    assert run["result"]["payload"]["to"] == ["ben@demo-office.example"]
+    assert "What's the status of the budget?" in run["result"]["payload"]["body"]
+
+    text = "Now I need you to send it to Ben12345678 at gmail.com"
+    compiler.add(november_output(text, "execute", ["Ben12345678 at gmail.com"]))
+    run = orch.handle(asha, text, "november_voice")
+    assert run["result"]["status"] == "clarify" and "real addresses" in run["result"]["message"]
+    assert not run["pendingActionIds"]

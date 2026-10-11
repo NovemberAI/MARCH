@@ -109,7 +109,9 @@ def run_cycle(
         telemetry.trace_evaluation(record)
         return record
     dv = ("dev", "val")
-    eval_orch.recall_cache = {}  # Each unique (employee, query) is embedded once per cycle.
+    from march.evaluation import AtlasRecallCache
+
+    eval_orch.recall_cache = AtlasRecallCache(eval_store, SUITE_VERSION)  # Embed each query once.
     progress("Evaluating active version (baseline) on dev+val…")
     base_runs = [run_suite(eval_store, eval_orch, org_id, parent, dv) for _ in range(REPEATS)]
     base_rates = [_rate(e, dv) for e in base_runs]

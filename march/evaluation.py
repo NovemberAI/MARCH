@@ -246,3 +246,33 @@ def run_suite(store: Store, orch: Orchestrator, org_id: str, version: dict[str, 
 
 def new_evaluation_id() -> str:
     return new_id()
+
+
+class AtlasRecallCache(dict):  # type: ignore[type-arg]
+    """Ranked vector-search results for identical (suite, employee, query) against unchanged
+    fixture memories, persisted in march_eval so repeat cycles skip rate-limited re-embedding.
+    Keyed by a hash of the fixture memory texts: any fixture change invalidates it."""
+
+    def __init__(self, store: Store, suite: str) -> None:
+        import hashlib
+
+        super().__init__()
+        self.coll = store.db.eval_recall_cache
+        blob = json.dumps(fixture_memories(suite), sort_keys=True, default=str)
+        self.version = hashlib.sha256(blob.encode()).hexdigest()[:16]
+
+    def _id(self, key: Any) -> str:
+        return self.version + "|" + "|".join(key)
+
+    def __contains__(self, key: object) -> bool:
+        if dict.__contains__(self, key):
+            return True
+        doc = self.coll.find_one({"_id": self._id(key)})
+        if doc:
+            dict.__setitem__(self, key, [tuple(x) for x in doc["ranked"]])
+            return True
+        return False
+
+    def __setitem__(self, key: Any, value: Any) -> None:
+        dict.__setitem__(self, key, value)
+        self.coll.update_one({"_id": self._id(key)}, {"$set": {"ranked": value, "createdAt": now()}}, upsert=True)

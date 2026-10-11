@@ -125,7 +125,15 @@ class Orchestrator:
                 result["payloadHash"] = action["payloadHash"]
         elif capability == "browser.research":
             if browser.enabled(scope):
-                browser.start(self.store, scope, run["_id"], compiled["intent"])
+                task = dict(compiled["intent"])
+                urls = tools.browser_targets(compiled["normalizedCommand"])
+                if urls:  # Bare domains become explicit URLs the planner may open.
+                    task["goal"] = (task["goal"] + " " + " ".join(urls))[:1000]
+                if task["intent_type"] not in {"research", "navigate"}:
+                    task["intent_type"] = "navigate"  # Read-only office browsing.
+                task["needs_clarification"], task["clarifying_question"] = False, None
+                task["confidence"] = max(task["confidence"], 0.8)
+                browser.start(self.store, scope, run["_id"], task)
                 self.store.update_run(
                     scope, run["_id"],
                     {"state": "browsing", "november": compiled, "capability": capability,

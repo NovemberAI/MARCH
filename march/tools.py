@@ -9,8 +9,31 @@ from march.db import Store
 from march.scope import RequestScope
 
 WEEKDAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
-MAIL_WORDS = re.compile(r"\b(?:e-?mail|mail|message|note to|write to)\b", re.I)
+MAIL_WORDS = re.compile(
+    r"\b(?:e-?mail|mail|message|note to|write to|send (?:it|this|that|the (?:draft|note)))\b"
+    r"|[\w.+-]+(?:@|\s+at\s+)[\w-]+(?:\.|\s+dot\s+)(?:com|org|net|io|edu)\b",
+    re.I,
+)
 CAL_WORDS = re.compile(r"\b(?:slot|meeting|meet|schedule|calendar|availability|free time)\b", re.I)
+
+
+DOMAIN = re.compile(r"\b((?:https?://)?(?:[a-z0-9-]+\.)+(?:com|org|net|io|ai|edu|gov|dev|app|co))\b(/\S*)?", re.I)
+OPEN_SITE = re.compile(r"\b(?:open|visit|go to|navigate to|pull up|load|browse to|take me to)\b", re.I)
+WEB_WORDS = re.compile(r"\b(?:website|web page|webpage|on the web|google|look up|search for)\b", re.I)
+
+
+def browser_targets(command: str) -> list[str]:
+    urls = []
+    for m in DOMAIN.finditer(command):
+        if re.search(r"(?:@|\s+at)\s*$", command[:m.start()]):
+            continue  # Part of an email address, not a site to open.
+        host = m[1] if m[1].lower().startswith("http") else "https://" + m[1].lower()
+        urls.append(host + (m[2] or ""))
+    return urls
+
+
+def wants_browser(command: str) -> bool:
+    return bool(OPEN_SITE.search(command) and browser_targets(command)) or bool(WEB_WORDS.search(command))
 
 
 def route(compiled: dict[str, Any]) -> str:
@@ -19,12 +42,10 @@ def route(compiled: dict[str, Any]) -> str:
     if status in {"cancelled", "clarify"}:
         return status
     command = compiled["normalizedCommand"]
-    if MAIL_WORDS.search(command) and compiled["intent"]["intent_type"] in {
-        "draft",
-        "prepare",
-        "execute",
-    }:
-        return "mail.prepare"
+    if wants_browser(command):
+        return "browser.research"
+    if MAIL_WORDS.search(command) and compiled["intent"]["intent_type"] not in {"cancel", "clarify"}:
+        return "mail.prepare"  # November's policy decision is kept; send still needs approval.
     if CAL_WORDS.search(command):
         return "calendar.find_slots"
     if compiled["intent"]["intent_type"] in {"research", "navigate"} and not MAIL_WORDS.search(command):
@@ -124,6 +145,38 @@ def _topic(command: str, entities: list[str]) -> str:
     return "a quick follow-up"
 
 
+def _edit1(a: str, b: str) -> bool:
+    if abs(len(a) - len(b)) > 1:
+        return False
+    if len(a) == len(b):
+        return sum(x != y for x, y in zip(a, b, strict=True)) <= 1
+    short, long = (a, b) if len(a) < len(b) else (b, a)
+    return any(long[:i] + long[i + 1:] == short for i in range(len(long)))
+
+
+def _match_contact(words: list[str], contacts: dict[str, Any]) -> tuple[Any, str | None]:
+    for w in words:
+        if w.casefold() in contacts:
+            return contacts[w.casefold()], None
+    for w in words:  # Speech-to-text slips such as "Bend" for "Ben": one edit, own book only.
+        if len(w) >= 3:
+            close = [c for name, c in contacts.items() if _edit1(w.casefold(), name)]
+            if len(close) == 1:
+                return close[0], w
+    return None, None
+
+
+def _last_draft(store: Store, scope: RequestScope) -> Any:
+    """Most recent prepared email in this employee's current session (insertion order)."""
+    runs = store.db.runs.find(
+        {**scope.filter(), "sessionId": scope.session_id, "capability": "mail.prepare",
+         "result.status": "prepared"}
+    ).sort("$natural", -1).limit(1)
+    for run in runs:
+        return run["result"]["payload"]
+    return None
+
+
 def prepare_mail(
     store: Store,
     scope: RequestScope,
@@ -132,25 +185,46 @@ def prepare_mail(
     prefs: dict[str, str],
 ) -> dict[str, Any]:
     intent = compiled["intent"]
+    command = compiled["normalizedCommand"]
     contacts = {
         item["payload"]["name"].casefold(): item["payload"]
         for item in store.fixture_items(scope, "contact")
     }
-    recipient = next(
-        (contacts[e.casefold()] for e in intent["entities"] if e.casefold() in contacts), None
-    )
-    if recipient is None:
+    words = [w for e in intent["entities"] for w in re.findall(r"[A-Za-z]+", e)]
+    words += re.findall(r"\b(?:to|email|e-mail|message)\s+([A-Za-z]+)", command, re.I)
+    if re.search(r"[\w.+-]+(?:@|\s+at\s+)[\w-]+(?:\.|\s+dot\s+)\w+", command, re.I):
+        names = ", ".join(c["name"] for c in contacts.values())
         return {
             "capability": "mail.prepare",
             "status": "clarify",
-            "message": "Who should receive it? I only use contacts in your own address book.",
+            "message": f"This demo only emails fictional contacts in your own address book ({names}); "
+            "it never sends to real addresses.",
+        }
+    recipient, heard_as = _match_contact(words, contacts)
+    if recipient is None:
+        previous = _last_draft(store, scope)
+        if previous is not None:  # Follow-up in the same session ("the email should say ...").
+            recipient = next((c for c in contacts.values() if c["email"] in previous["to"]), None)
+    if recipient is None:
+        names = ", ".join(c["name"] for c in contacts.values())
+        return {
+            "capability": "mail.prepare",
+            "status": "clarify",
+            "message": f"Who should receive it? Your address book has: {names}.",
         }
     employee = store.employee(scope)
     topic = _topic(compiled["normalizedCommand"], intent["entities"])
     brief = config["applyPreferences"] and prefs.get("email.style") == "brief"
     first = recipient["name"].split()[0]
+    said = re.search(
+        r"\b(?:saying|say|says|tell (?:him|her|them)|to say|that says|asking)\s+(?:that\s+)?(.+?)[.!?]?$",
+        command, re.I)
     sentences = [f"I wanted to follow up about {topic}."]
-    if not brief:
+    if said:
+        ask = said[1].strip()
+        ask = re.sub(r"^what's\b", "what's", ask)
+        sentences = [ask[:1].upper() + ask[1:] + ("?" if re.match(r"(?i)(what|how|when|where|who|can|could|is|are|do|does)\b", ask) else ".")]
+    if not brief and not said:
         sentences += [
             "Let me know if you have any questions or need anything from me.",
             "Happy to find a time to discuss.",
@@ -168,6 +242,7 @@ def prepare_mail(
             "body": body,
         },
         "appliedPreferences": ["email.style=brief"] if brief else [],
+        "heardAs": heard_as,
         "prohibitedActions": list(intent["prohibited_actions"]),
         "constraints": list(intent["constraints"]),
     }
