@@ -1,5 +1,7 @@
 # Implementation status
 
+> **16:05 PDT: moved to the official event sandbox.** Org "SFTW: Harness Engineering & Model Wrangling Hackathon", project "rajayshashwat@gmail.com's Sandbox Project", Cluster0 (M10, `cluster0.qkufdh`). Everything before this note ran on a personal cluster (`cluster0.oq0rmd9`) that was not the sandbox. In the sandbox, the databases were re-seeded fresh, autoEmbed indexes were recreated, and the improvement cycles were re-run there (see "Sandbox cycles" below). Earlier cycle IDs refer to the old cluster and are kept here only as history.
+
 Last updated: 2026-10-11 ~15:00 PDT (clock check: work is ahead of the doc-09 timeline). Only verified facts are listed here.
 
 ## Milestones
@@ -55,3 +57,7 @@ None. No accounts were created, no email was sent, no push, no paid service.
 | suite_v2 (+20 ordinary history notes per employee; **added after v1 passed, disclosed**) | baseline v1, all splits | dev 10/12, val 6/6, test 4/6. **New real failures c03 and c07**: Casey's explicit 25-minute default was not in semantic top-6 once her history grew, so slots came out at 30 minutes |
 | suite_v2 | cycle 1 `2ba36d9d…` for emp_casey | **rejected**. Optimizer proposed `/retrieval/maxContextTokens=5000` (a field not wired in this build). dev+val 0.889 -> 0.889 over 3 paired repeats, noise band 0.0, no case fixed. Held-out test 4/6 -> 4/6. v1 stays active. |
 | suite_v2 | cycle 2 `6ac47e73…` for emp_casey | **PROMOTED**. Optimizer (local qwen3:4b-instruct, given that cycle 1 was rejected and the structural evidence `explicit_preference_existed_but_unused:scheduling.default_duration_minutes`) proposed `/retrieval/pinExplicitPreferences=true`. dev+val 0.889 -> 1.000 in all 3 paired repeats; noise band 0.0; fixed c03 and c07; no regressions; no critical failures. Held-out test 4/6 -> 4/6 (remaining failures are November understanding: c05 clarify, b07 intent). Compare-and-set promotion: Casey's active version is now v3 with the patch; Asha and Ben stay on v1. |
+
+## Sandbox cycles (official SFTW sandbox, `cluster0.qkufdh`)
+
+Running at 16:05: two suite_v2 cycles for emp_casey (`scripts/run_eval.py cycle emp_casey`, run twice). Results will be recorded here.

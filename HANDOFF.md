@@ -5,7 +5,7 @@ Read `AGENTS.md`, then this file, then `IMPLEMENTATION-STATUS.md` and `NOVEMBER-
 ## Current state (2026-10-11 ~15:05 PDT)
 
 - M0 through M4 code is complete. The first local commit is `e37148d`; later work is uncommitted. Nothing has been pushed.
-- Atlas: `.env` has `MONGODB_URI` for the event sandbox. It is local only, gitignored and chmod 600, and must never be printed or committed. Databases `march_demo` and `march_eval` are seeded. The autoEmbed index `memory_autoembed_v1` is READY in both.
+- Atlas: `.env` points at the **official SFTW sandbox** (`cluster0.qkufdh`; the old personal cluster `oq0rmd9` is no longer used, and its .env line is backed up in `.runtime/`). It is local only, gitignored and chmod 600, and must never be printed or committed. Databases `march_demo` and `march_eval` are seeded. The autoEmbed index `memory_autoembed_v1` is READY in both.
 - NovemberAI is at `/Users/shashwatraj/november-1`. Never modify it. It is imported through `.venv/.../november_local_checkout.pth`; `march` is importable from scripts through `march_local.pth`.
 - Processes:
   - Ollama from November's runtime: `cd ~/november-1 && OLLAMA_MODELS="$PWD/.runtime/models" OLLAMA_NO_CLOUD=1 .runtime/ollama/ollama serve`. Check with `curl localhost:11434/api/version` first.
