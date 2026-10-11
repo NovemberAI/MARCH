@@ -60,4 +60,9 @@ None. No accounts were created, no email was sent, no push, no paid service.
 
 ## Sandbox cycles (official SFTW sandbox, `cluster0.qkufdh`)
 
-Running at 16:05: two suite_v2 cycles for emp_casey (`scripts/run_eval.py cycle emp_casey`, run twice). Results will be recorded here.
+| Cycle | Result |
+| --- | --- |
+| 1 `9e4b5ceb…` (emp_casey, suite_v2) | **PROMOTED**. Baseline dev+val 0.889 in all 3 repeats (c03, c07: `duration:30`, evidence `explicit_preference_existed_but_unused:scheduling.default_duration_minutes`). The optimizer proposed `/retrieval/pinExplicitPreferences=true`. Candidate 1.000; fixed c03 and c07; no regressions or critical failures. Compare-and-set promotion for Casey only. |
+| 2 `29f19525…` (emp_casey, after promotion) | `no_failures_to_fix`: the promoted version passes dev+val 1.0 in all 3 repeats, so the loop stops. |
+
+The optimizer received the structural-evidence improvement from the start here, so its first sandbox proposal was the effective one. On the old cluster, the first proposal (`maxContextTokens`) was rejected before that evidence was added.
