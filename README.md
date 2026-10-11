@@ -1,55 +1,102 @@
 # MARCH
 ## Multi-user Adaptive Recursive Context Harness
 
-One desk assistant. Three private employee workspaces. A harness that improves only when tests prove it.
+One shared office desk assistant. It recognizes enrolled colleagues by voice, opens each one's **private MongoDB-backed workspace**, runs employee-scoped tools under exact-action approval, does read-only web research, and **improves bounded parts of its own harness only when measured evaluations show it got better**.
 
-**Status:** build specification, prepared October 11, 2026 for the Harness Engineering & Model Wrangling #SFTechWeek hackathon. No MARCH code exists yet. No accounts, databases, credentials or deployments were created by this package.
+Built for the Harness Engineering & Model Wrangling hackathon (Statement 1: Recursive Harnessing), October 11, 2026, on the event MongoDB Atlas sandbox.
 
-## Start here
+---
 
-1. Create the MARCH repository in the November GitHub organization (you control naming and visibility; it must be public before submission).
-2. Copy this folder into it.
-3. Make the NovemberAI checkout available to the coding agent.
-4. Give the agent the kickoff prompt below.
+## The recursive harness loop (the main idea)
 
-### Coding-agent kickoff prompt
+```
+real runs ──► structural failures / employee feedback ──► MongoDB evidence
+     ▲                                                          │
+     │                                          fixed optimizer (local LLM) proposes ONE patch
+     │                                          to ONE allowlisted, bounded config path
+     │                                                          │
+ promote (compare-and-set)  ◄── hard gates ◄── paired eval: baseline vs candidate
+ or reject with reasons           (critical cases, noise band,   (march_eval, fixture-only,
+                                   per-case regressions)          cached November intents,
+                                                                  real Atlas Vector Search)
+```
 
-> Read AGENTS.md, then docs/13-NOVEMBERAI-REUSE.md and docs/09-IMPLEMENTATION-PLAN.md. These are a plan, not existing code. First inspect the NovemberAI checkout and write NOVEMBER-REUSE-MAP.md: language, launch command, and exact entry points for capture, ASR, transcript checks, intent schema/compiler, policy, approvals and TTS, plus what is implemented vs only planned. Reuse those components as-is for ASR and intent; do not build a second ASR or intent parser. Preserve uncommitted work and running processes; do not fetch, reset, push or change repository visibility. Then build milestones M0-M5 in order against the event MongoDB Atlas sandbox, using the partner products in docs/14 within their time boxes. Use fictional fixture employees and fixture tools; no live accounts, real sends or paid usage without my explicit approval. At each cut line take the stated fallback, label it, and continue. Keep IMPLEMENTATION-STATUS.md current with real commands and results. Never fake voice recognition, evaluation results, or integrations.
+- **What can change:** only `HarnessConfig` fields in `march/harness.py` `ALLOWLIST`, within bounds: retrieval depth, pinning explicit preferences, a scheduling preference pass, and similar. Each version is immutable and has its own `configHash`.
+- **What cannot change:** identity, scope, approvals, credentials, evaluators, expected outcomes and source code. These are not representable as patches (`tests/test_harness.py`).
+- **Gates (doc 07):**
+  - zero critical-case failures (isolation, negation, approval);
+  - mean dev+val gain greater than the baseline noise band across 3 paired repeats;
+  - neither split regresses;
+  - at least one previously failing case is fixed;
+  - no per-case regressions.
+  The held-out test split is reported but never shown to the optimizer.
+- **Promotion** is a compare-and-set on `employees.activeHarnessVersionId`, so a stale candidate cannot overwrite. Runs that are in flight keep their pinned version. Rollback is available from the UI.
+- **Honesty guards:**
+  - evaluation has no live side effects (browser disabled, fixture tools only);
+  - an evaluation is invalidated if any case falls back from Atlas Vector Search to lexical recall;
+  - token usage is reported as unavailable rather than zero.
 
-## Documents
+### Measured results (real, from Atlas `march_eval.evaluations`)
 
-- [AGENTS.md](AGENTS.md): build contract, reuse mandate, invariants.
-- [01 Product and scope](docs/01-PRODUCT-AND-SCOPE.md)
-- [02 Architecture](docs/02-ARCHITECTURE.md)
-- [03 MongoDB data model](docs/03-MONGODB-DATA-MODEL.md)
-- [04 Voice and identity](docs/04-VOICE-AND-IDENTITY.md)
-- [05 Memory and context](docs/05-MEMORY-AND-CONTEXT.md)
-- [06 Tools and approvals](docs/06-TOOLS-AND-APPROVALS.md)
-- [07 Harness improvement](docs/07-HARNESS-IMPROVEMENT.md)
-- [08 API and UI](docs/08-API-AND-UI.md)
-- [09 Three-hour implementation plan](docs/09-IMPLEMENTATION-PLAN.md)
-- [10 Tests and evaluations](docs/10-TESTS-AND-EVALUATIONS.md)
-- [11 Operations, demo, submission](docs/11-OPERATIONS-AND-DEMO.md)
-- [12 Research and decisions](docs/12-RESEARCH-AND-DECISIONS.md)
-- [13 NovemberAI reuse contract](docs/13-NOVEMBERAI-REUSE.md)
-- [14 Partner products](docs/14-PARTNER-PRODUCTS.md)
+See `IMPLEMENTATION-STATUS.md` → "M4 cycles" for the exact evaluation IDs, rates, patch and decision.
 
-## Built before the event (to be completed by the agent)
+## What runs
 
-NovemberAI: voice capture, ASR, transcript checks, intent compiler, deterministic policy, approval/cancellation. Link and commit go here.
+| Capability | How |
+| --- | --- |
+| Voice → text → intent | **NovemberAI** (reused, unmodified): browser capture worklet, `VoiceLoop`, Silero VAD, "Hey November" wake word / push-to-talk, faster-whisper `small.en` (local), transcript checks, intent compiler (local Qwen via Ollama), deterministic policy |
+| Who is speaking | MARCH: SpeechBrain ECAPA on the **same buffer** November captured, so no second mic stream. Matched / unknown / ambiguous / insufficient. Encrypted profiles in Atlas; consent, verification and revoke |
+| Private workspaces | Server-owned `RequestScope`; every repository method adds `mode/orgId/employeeId`; the browser cannot choose an `employeeId` |
+| Memory | Typed explicit preferences (read-your-writes) plus notes recalled with **Atlas Vector Search Automated Embedding** (`autoEmbed`, voyage-4-lite) with scope pre-filters; forget with tombstones |
+| Tools | Fixture calendar slot finder and email preparation; exact payload-hash approval, owner-bound, single-use, simulated send; November's "do not send" keeps a draft non-dispatchable |
+| Web research | **NovemberAI's Aside `BrowserAdapter`** (reused): real local Aside browser search/open/read, **read-only** (MARCH refuses every click/fill) |
+| Talk-back | ElevenLabs TTS for generic template acknowledgments only, never private content (enabled when `ELEVENLABS_API_KEY` is set) |
 
-## Built during the event (planned)
+## Built before the event (reused, not claimed as new)
 
-Speaker identification and enrollment; per-employee MongoDB context, memory and Vector Search retrieval; scoped tool broker and owner-bound approvals; harness versioning, evaluation suite and gated promotion; Raindrop tracing; optional Modelence hosting and ElevenLabs voice; demo UI.
+**NovemberAI**, https://github.com/NovemberAI/november, local checkout at commit `ee7a476` plus the owner's uncommitted working-tree changes (see `NOVEMBER-REUSE-MAP.md`). Reused components:
+- audio capture worklet;
+- `VoiceLoop` state machine, VAD, wake word, Whisper ASR;
+- transcript normalization and credential rejection;
+- intent schema, compiler and local-model editor;
+- deterministic policy;
+- Aside browser adapter and local planner.
 
-## The minimum convincing demo
+MARCH imports these from the checkout and does not copy them.
 
-- Three consenting people recognized on new phrases; a fourth voice rejected.
-- Each person's preferences persist in Atlas and stay separate as speakers alternate.
-- The same request yields employee-specific results through scoped fixture tools.
-- A recorded failure produces one real allowlisted harness change, tested on the same cases, promoted or honestly rejected.
-- A cross-employee request and an unknown speaker fail safely.
+## Built during the event (October 11, 2026)
+
+Everything under `march/`, `tests/`, `scripts/` and `evals/`:
+- reuse map;
+- Atlas data layer and scoped repositories;
+- fixture tools;
+- payload-hash approvals;
+- speaker identification (enrollment, calibration and replay tools);
+- per-employee memory with Automated Embedding retrieval;
+- the versioned harness, evaluation suite, optimizer and gated promotion/rollback;
+- read-only browser integration;
+- ElevenLabs talk-back;
+- the desk UI.
+
+The planning documents in `docs/` were written the same day, before the code.
+
+## Run it
+
+```sh
+# 1. NovemberAI's local models (from its own runtime)
+cd ~/november-1 && OLLAMA_MODELS="$PWD/.runtime/models" OLLAMA_NO_CLOUD=1 .runtime/ollama/ollama serve
+# 2. MARCH (needs .env with MONGODB_URI for the event Atlas sandbox)
+cd ~/MARCH && .venv/bin/python -m march.server        # http://127.0.0.1:8780
+# tests and evaluation
+.venv/bin/pytest -q -p no:cacheprovider
+MARCH_SUITE=suite_v2 .venv/bin/python scripts/run_eval.py baseline
+.venv/bin/python scripts/run_eval.py cycle emp_asha
+```
 
 ## Not claimed
 
-No production voice authentication, no live Google or Aside integration today, no measured results until the system runs, and no statistical significance from a small evaluation suite.
+- Voice identification routes demo workspaces only; it is not authentication.
+- All employees, calendars, contacts and emails are fictional, and sends are simulated.
+- The browser is one shared local Aside session, limited to public pages with no employee logins, because per-employee browser isolation is unverified.
+- The evaluation suite is small (24 cases), so no statistical significance is claimed.
+- Suite v2's larger memory history was added after suite v1's baseline passed every dev/val case. That is disclosed in `IMPLEMENTATION-STATUS.md`.
