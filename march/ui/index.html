@@ -35,6 +35,13 @@
   details summary { cursor:pointer; color:var(--muted); font-size:13px; }
   .run { border-top:1px solid var(--line); padding:10px 0; }
   .run:first-child { border-top:0; }
+  .steps { display:grid; gap:8px; margin-top:10px; }
+  .step { display:flex; gap:12px; align-items:flex-start; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:var(--bg); }
+  .step .n { flex:none; width:26px; height:26px; border-radius:50%; display:grid; place-items:center; font-weight:700; background:var(--accent); color:#fff; font-size:13px; }
+  .step.wait .n { background:var(--line); color:var(--muted); }
+  .step b { display:block; }
+  .score { font-size:20px; font-weight:700; }
+  .good { color:#1f9d6b; } .bad { color:var(--bad); }
 </style>
 </head>
 <body>
@@ -94,9 +101,9 @@
   </section>
 
   <section class="card" id="harness-card" hidden>
-    <div class="label">Harness · bounded self-improvement (this employee only)</div>
+    <div class="label">Self-improving assistant · tests itself, fixes itself, only keeps fixes that pass</div>
     <p id="h-active"></p>
-    <div class="row"><button id="h-improve">Run one improvement cycle</button><button id="h-refresh">Refresh</button></div>
+    <div class="row"><button id="h-improve" class="primary">▶ Let MARCH improve itself</button><button id="h-refresh">Refresh</button><button id="h-reset">↺ Reset to original version</button></div>
     <pre id="h-log" class="note"></pre>
     <div id="h-eval"></div>
     <details><summary>Versions</summary><div id="h-versions"></div></details>
@@ -212,16 +219,47 @@ async function renderHarness() {
   try {
     const h = await api("/api/harness");
     $("harness-card").hidden = false;
-    $("h-active").innerHTML = `Active: <b>${esc(h.active.label)}</b> <span class="note">pinExplicitPreferences=${h.active.config.retrieval.pinExplicitPreferences}, semanticTopK=${h.active.config.retrieval.semanticTopK}, schedulingPreferencePass=${h.active.config.workflow.schedulingPreferencePass}</span>`;
+    $("h-active").innerHTML = `${esc(current.employee.displayName)}'s assistant is on <b>${h.active.label.startsWith("v1") ? "the original version" : "an improved version (" + esc(h.active.label) + ")"}</b>.`;
     $("h-log").textContent = (h.cycle.log || []).join("\n");
     $("h-improve").disabled = h.cycle.state === "running";
-    const e = h.lastEvaluation;
-    $("h-eval").innerHTML = !e ? "" : `<p><b>Decision: ${esc(e.gateDecision)}</b> · ${esc(e.suiteVersion)} · ${e.repetitions} paired repeats</p>` +
-      (e.proposal ? `<pre>patch ${esc(JSON.stringify(e.proposal.patch))}\nhypothesis: ${esc(e.proposal.hypothesis)}</pre>` : "") +
-      (e.aggregate ? `<p class="note">dev+val pass rate: baseline ${JSON.stringify(e.baselineRates)} → candidate ${JSON.stringify(e.candidateRates)} · gain ${e.aggregate.gain.toFixed(3)} vs noise band ${e.aggregate.noiseBand.toFixed(3)} · fixed: ${esc(e.aggregate.fixedCases.join(", ") || "none")} · regressed: ${esc(e.aggregate.regressedCases.join(", ") || "none")}</p>` : "") +
-      (e.heldOutTest && e.heldOutTest.baseline ? `<p class="note">held-out test (never shown to optimizer): baseline ${e.heldOutTest.baseline.passed}/${e.heldOutTest.baseline.total} → candidate ${e.heldOutTest.candidate.passed}/${e.heldOutTest.candidate.total}</p>` : "") +
-      (e.failureCodes && e.failureCodes.length ? `<p class="warn">Gate reasons: ${esc(e.failureCodes.join("; "))}</p>` : "") +
-      `<details><summary>Per-case failures</summary><pre>baseline: ${esc(JSON.stringify(e.baselineFailures))}\ncandidate: ${esc(JSON.stringify(e.candidateFailures))}</pre></details>`;
+    const e = h.lastEvaluation, running = h.cycle.state === "running", log = h.cycle.log || [];
+    const plainFail = (codes) => {
+      const c = Object.keys(codes || {}).join(" ");
+      if (/default_duration|duration/.test(c)) return "It ignored a saved preference: Casey's meetings should be 25 minutes, but it offered 30.";
+      if (/afternoon|morning/.test(c)) return "It ignored a saved preference about meeting times.";
+      if (/brief/.test(c)) return "It ignored a saved preference for short emails.";
+      if (/buffer/.test(c)) return "It ignored a saved preference for breaks between meetings.";
+      return c ? "Some test tasks failed." : "No problems found.";
+    };
+    const plainFix = (patch) => ({
+      "/retrieval/pinExplicitPreferences": "Always load the person's saved preferences before answering (instead of hoping search finds them).",
+      "/workflow/schedulingPreferencePass": "Double-check saved scheduling preferences before proposing times.",
+      "/retrieval/semanticTopK": `Look at more past notes when answering (${patch && patch.value}).`,
+    })[patch && patch.path] || (patch ? `Change setting ${patch.path} to ${JSON.stringify(patch.value)}.` : "");
+    const pct = (r) => r == null ? "—" : `${Math.round(r * 18)}/18`;
+    const base = e && e.baselineRates ? e.baselineRates[0] : null, cand = e && e.candidateRates ? e.candidateRates[0] : null;
+    const codes = {}; ((e && e.baselineFailures) || []).forEach(f => f.failures.forEach(x => codes[x] = 1));
+    const has = (t) => log.some(l => l.includes(t));
+    const decided = e && e.gateDecision;
+    const step = (n, done, title, body) => `<div class="step ${done ? "" : "wait"}"><div class="n">${n}</div><div><b>${title}</b>${body || ""}</div></div>`;
+    $("h-eval").innerHTML = (!e && !running) ? `<p class="note">Click the button: MARCH grades itself on 18 practice tasks, finds what it got wrong, proposes one safe fix, re-grades, and keeps the fix only if it's clearly better.</p>` :
+      `<div class="steps">` +
+      step(1, has("Baseline") || e, "Grade the current version on 18 practice tasks",
+        base != null ? `<div class="score ${base < 1 ? "bad" : "good"}">${pct(base)} passed</div>` : `<span class="note">grading…</span>`) +
+      step(2, has("Baseline") || e, "Find what went wrong", `<span>${esc(plainFail(codes))}</span>`) +
+      step(3, has("Candidate patch") || (e && e.proposal), "Propose ONE safe fix",
+        e && e.proposal ? `<span>${esc(plainFix(e.proposal.patch))}</span><div class="note">It may only change approved settings — never privacy, permissions or the tests themselves.</div>` : (decided === "no_failures_to_fix" ? `<span class="note">Nothing to fix.</span>` : `<span class="note">thinking…</span>`)) +
+      step(4, !!(e && e.candidateRates), "Re-grade with the fix on the same 18 tasks",
+        cand != null ? `<div class="score ${cand > base ? "good" : "bad"}">${pct(base)} → ${pct(cand)}</div>` : `<span class="note">${decided ? "skipped" : "waiting…"}</span>`) +
+      step(5, !!decided, "Decide: keep it or throw it away",
+        !decided ? `<span class="note">waiting…</span>` :
+        decided === "promoted" ? `<div class="score good">✅ Kept — now active for ${esc(current.employee.displayName)} only</div><div class="note">Other people's assistants are unchanged.</div>` :
+        decided === "rejected" ? `<div class="score bad">❌ Thrown away — it didn't clearly help</div><div class="note">${esc((e.failureCodes || []).join("; "))}</div>` :
+        `<div class="score good">Already passing — nothing to change</div>`) +
+      `</div>` +
+      (e ? `<details><summary>Technical details</summary><pre>patch ${esc(JSON.stringify(e.proposal && e.proposal.patch))}\npass rates baseline ${JSON.stringify(e.baselineRates)} → candidate ${JSON.stringify(e.candidateRates)} (3 repeats)\nheld-out test (never shown to the optimizer): ${e.heldOutTest && e.heldOutTest.baseline ? e.heldOutTest.baseline.passed + "/6 → " + e.heldOutTest.candidate.passed + "/6" : "—"}\nfailures before: ${esc(JSON.stringify(e.baselineFailures))}\nfailures after: ${esc(JSON.stringify(e.candidateFailures))}\nevaluation ${esc(e._id)} stored in MongoDB Atlas</pre></details>` : "") +
+      `<details><summary>Live log</summary><pre class="note">${esc(log.join("\n"))}</pre></details>`;
+    $("h-log").textContent = "";
     $("h-versions").innerHTML = h.versions.map(v => `<div class="run">${esc(v.label)} · ${esc(v.status)} ${v.patch ? "· " + esc(JSON.stringify(v.patch)) : ""} ${v.rejectionReasons ? `<span class="warn">${esc(v.rejectionReasons.join("; "))}</span>` : ""}
       ${v.status !== "active" && v.status !== "rejected" && v.status !== "candidate" ? `<button data-rb="${v.id}">Roll back to this</button>` : ""}</div>`).join("");
     $("h-versions").querySelectorAll("[data-rb]").forEach(b => b.onclick = async () => { await api("/api/harness/rollback", {targetVersionId: b.dataset.rb}).catch(()=>{}); renderHarness(); });
@@ -230,6 +268,7 @@ async function renderHarness() {
 }
 $("h-improve") && ($("h-improve").onclick = async () => { await api("/api/harness/improve", {}).catch(e => alert(e.message)); renderHarness(); });
 $("h-refresh") && ($("h-refresh").onclick = renderHarness);
+$("h-reset") && ($("h-reset").onclick = async () => { if (!current) return; await api("/api/harness/rollback", {targetVersionId: `demo:${current.employee.id}:v1`}).catch(()=>{}); renderHarness(); });
 
 // ElevenLabs talk-back: only generic template acknowledgments (server enforces allowlist).
 let ttsAudio = null;
